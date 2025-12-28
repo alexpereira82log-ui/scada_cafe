@@ -260,7 +260,9 @@ print(perdas_motivo)
 print(f"Total: {total_perdas_mes}")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# DASHBOARD: Gráficos
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# DASHBOARD: GRÁFICOS
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -303,6 +305,7 @@ dados_diarios_mes = dados_diarios_mes[
     dados_diarios_mes['Faturamento'] > 0
 ].reset_index(drop=True) # O reset_index é opcional, mas boa prática após um filtro
 
+
 # --- NOVIDADE: 1.4 Calcular a Média ---
 media_diaria = dados_diarios_mes['Faturamento'].mean()
 
@@ -344,7 +347,8 @@ for dia, faturamento in zip(dados_diarios_mes['Dia'], dados_diarios_mes['Faturam
 axs["B"].set_title(f'Faturamento Diário', fontsize=14, weight='bold')
 axs["B"].set_xlabel('Dia do Mês', fontsize=10)
 axs["B"].set_ylabel('Faturamento (R$)', fontsize=10)
-axs["B"].set_xticklabels(dados_diarios_mes["Dia"], rotation=45, fontsize=8)
+axs["B"].tick_params(axis="x", rotation=45, labelsize=8)
+
 
 # Garantir que todos os dias do mês apareçam no eixo X
 dias = range(1, len(dados_diarios_mes) + 1)
@@ -352,8 +356,6 @@ axs["B"].set_xticks(dias)
 
 axs["B"].legend()
 axs["B"].grid(True, linestyle='--', alpha=0.4)
-
-plt.tight_layout() # Ajusta automaticamente o layout
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -460,7 +462,7 @@ axs["D"].axhline(
 axs["D"].set_title('Perdas Por Mês', fontsize=14, weight='bold')
 #axs["D"].set_xlabel("Mês")
 axs["D"].set_ylabel("Quantidade")
-axs["D"].set_xticklabels(perdas_por_mes["Mês"], rotation=45, fontsize=8)
+axs["D"].tick_params(axis="x", rotation=45, labelsize=8)
 axs["D"].grid(False)
 axs["D"].grid(axis="y", linestyle="--", alpha=0.4)
 axs["D"].legend()
@@ -484,8 +486,6 @@ for i, barra in enumerate(perdas_mes):
 #plt.axvspan(4.5, 9.5, color='lightgreen', alpha=0.3) 
 #plt.text(5.5, 70, 'Período de Redução de Perdas', fontsize=10, color='darkgreen')
 
-plt.tight_layout() # Ajusta o layout automaticamente
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # GRAFICO E:
@@ -501,8 +501,6 @@ perdas_cat = axs["E"].pie(
 
 # === Personalização ===
 axs["E"].set_title(f'Perdas por Categoria', fontsize=14, weight='bold')
-
-plt.tight_layout() # Ajusta o layout automaticamente
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -541,10 +539,24 @@ faturamento_por_mes["Mês"] = pd.Categorical(faturamento_por_mes["Mês"],
 faturamento_por_mes = faturamento_por_mes.sort_values("Mês")
 
 # === Criar o gráfico de barras ===
-barras_meta = axs["A"].bar(faturamento_por_mes["Mês"], faturamento_por_mes["Meta"], label="Meta", color="darkorange", alpha=0.4)
-barras_faturamento = axs["A"].bar(faturamento_por_mes["Mês"], faturamento_por_mes["Faturamento"],label="Faturamento", color="steelblue")
-axs["A"].bar_label(barras_meta, fmt="{:,.0f}", padding=3, fontsize=8, label='Meta')
-axs["A"].bar_label(barras_faturamento, fmt="{:,.0f}", padding=3, fontsize=8, label='Faturamento', fontweight='bold')
+barras_meta = axs["A"].bar(
+    faturamento_por_mes["Mês"],
+    faturamento_por_mes["Meta"],
+    label="Meta",
+    color="darkorange",
+    alpha=0.4
+)
+
+barras_faturamento = axs["A"].bar(
+    faturamento_por_mes["Mês"],
+    faturamento_por_mes["Faturamento"],
+    label="Faturamento",
+    color="steelblue"
+)
+
+# Definir rótulos das colunas Meta e Faturamento
+axs["A"].bar_label(barras_meta, fmt="{:,.0f}", padding=3, fontsize=8)
+axs["A"].bar_label(barras_faturamento, fmt="{:,.0f}", padding=3, fontsize=8, fontweight='bold')
 
 # === Linha média ===
 axs["A"].axhline(y=media_faturamento_mes, color="darkred", linestyle="--", alpha=0.3, linewidth=2,
@@ -554,15 +566,10 @@ axs["A"].axhline(y=media_faturamento_mes, color="darkred", linestyle="--", alpha
 axs["A"].set_title("Faturamento x Meta Mensal", fontsize=14, weight='bold')
 #ax.set_xlabel("Mês")
 axs["A"].set_ylabel("Valores (R$)")
-axs["A"].set_xticklabels(faturamento_por_mes["Mês"], rotation=45, fontsize=8) # rotation=45, fontsize=8
-#ax.set_yticklabels(fontsize=8)
+axs["A"].tick_params(axis="x", rotation=45, labelsize=8)
 axs["A"].legend(loc="lower left")
 axs["A"].grid(False)
 axs["A"].grid(axis="y", linestyle="--", alpha=0.6)
-
-#plt.savefig("faturamento_x_meta_mensal.png", dpi=300)
-
-plt.tight_layout()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -608,8 +615,6 @@ axs["B"].set_xticks(dias)
 #axs["B"].legend()
 axs["B"].grid(False)
 axs["B"].grid(True, linestyle='--', alpha=0.4)
-
-plt.tight_layout() # Ajusta automaticamente o layout
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -672,13 +677,6 @@ ax2.grid(False)
 #dias = range(1, len(dados_diarios_mes) + 1)
 axs["C"].set_xticks(dias)
 
-# Adicionar legendas ancorando a posição fixa (x, y) / bbox_transform para posicionar em relação a área do gráfico
-#axs["C"].legend(bbox_to_anchor=(0.65, 1), bbox_transform=axs["C"].transAxes)
-#axs["C"].legend(bbox_transform=ax2.transAxes)
-#ax2.legend()
-
-plt.tight_layout() # Ajusta automaticamente o layout
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # # AJUSTES FIGURA:
@@ -689,6 +687,7 @@ fig.suptitle("Dashboard Mês a Mês - Scada Café - Loja Cinema - 2025", fontsiz
 plt.savefig("dashboard_Mes_a_Mes.png", dpi=300, bbox_inches="tight")
 
 plt.show()
+
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # DASHBOARD: Mural de Resultados:
@@ -740,15 +739,12 @@ axs["A"].axhline(y=media_faturamento_mes, color="darkred", linestyle="--", alpha
 axs["A"].set_title("Faturamento x Meta Mensal", fontsize=14, weight='bold')
 #ax.set_xlabel("Mês")
 axs["A"].set_ylabel("Valores (R$)")
+axs["A"].set_xticks(range(len(faturamento_por_mes)))
 axs["A"].set_xticklabels(faturamento_por_mes["Mês"], rotation=45, fontsize=8) # rotation=45, fontsize=8
 #ax.set_yticklabels(fontsize=8)
 axs["A"].legend(loc="lower left")
 axs["A"].grid(False)
 axs["A"].grid(axis="y", linestyle="--", alpha=0.6)
-
-#plt.savefig("faturamento_x_meta_mensal.png", dpi=300)
-
-plt.tight_layout()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -773,6 +769,7 @@ axs["B"].set_title('Perdas Por Mês', fontsize=14, weight='bold')
 axs["B"].set_ylabel("Quantidade")
 #axs["D"].set_xlabel("Mês")
 axs["B"].grid(False)
+axs["B"].set_xticks(range(len(perdas_por_mes)))
 axs["B"].set_xticklabels(perdas_por_mes["Mês"], rotation=45, fontsize=8)
 axs["B"].grid(axis="y", linestyle="--", alpha=0.4)
 axs["B"].legend()
@@ -792,12 +789,6 @@ for i, barra in enumerate(perdas_mes):
     if perdas_por_mes["Quantidade"].iloc[i] < media_perdas_mes:
         barra.set_color('green')
 
-# Destacar área no gráfico (exemplo: período de redução de perdas)
-#plt.axvspan(4.5, 9.5, color='lightgreen', alpha=0.3) 
-#plt.text(5.5, 70, 'Período de Redução de Perdas', fontsize=10, color='darkgreen')
-
-plt.tight_layout() # Ajusta o layout automaticamente
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # GRAFICO C:
@@ -813,8 +804,6 @@ perdas_cat = axs["C"].pie(
 
 # === Personalização ===
 axs["C"].set_title(f'Perdas por Categoria', fontsize=14, weight='bold')
-
-plt.tight_layout() # Ajusta o layout automaticamente
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
