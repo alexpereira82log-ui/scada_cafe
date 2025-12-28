@@ -69,7 +69,7 @@ faturamento_por_mes["Mês"] = pd.Categorical(
 )
 faturamento_por_mes = faturamento_por_mes.sort_values("Mês")
 
-print("-" * 50)
+print("\n" + "-" * 50)
 print("FATURAMENTO POR MÊS:")
 print(faturamento_por_mes)
 
@@ -104,7 +104,7 @@ faturamento_dia_semana["Dia semana"] = pd.Categorical(
 )
 faturamento_dia_semana = faturamento_dia_semana.sort_values("Dia semana")
 
-print("-" * 50)
+print("\n" + "-" * 50)
 print("MÉDIAS POR DIA DA SEMANA:")
 print(faturamento_dia_semana)
 
@@ -133,7 +133,7 @@ produtos_ano["Valor Total"] = produtos_ano["Valor Total"].apply(formatar)
 produtos_ano["Média Fat Mensal"] = produtos_ano["Média Fat Mensal"].apply(formatar)
 produtos_ano["% do Fat Total"] = produtos_ano["% do Fat Total"].apply(formatar_perc)
 
-print("-" * 50)
+print("\n" + "-" * 50)
 print(f"Faturamento Total Ano: R$ {total_fat_ano:,.2f}")
 print("Produtos mais vendidos do Ano:")
 print(produtos_ano.head(10)) # Exibir os 10 produtos mais vendidos do Ano
@@ -186,7 +186,7 @@ total_dias_eq_2 = df_mes_corrente[df_mes_corrente['Equipe'] == 2]['Dia'].nunique
 # Resumo de Resultados:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # EXIBIÇÕES:
-print("-" * 50)
+print("\n" + "-" * 50)
 print(f'- DADOS FATURAMENTO - {nome_do_mes_corrente}:')
 print(f'Meta Mês: R$ {meta_mes_corrente:,.2f}')
 print(f'Faturamento: R$ {soma_faturamento:,.2f}')
@@ -221,7 +221,7 @@ total_comissao_atual = comissao_df['Vlr Final'].sum()
 media_diaria_comissao = comissao_df['Vlr Final'].mean()
 projecao_comissao = (total_comissao_atual + (media_diaria_comissao * dias_restantes))
 
-print("-" * 50)
+print("\n" + "-" * 50)
 print("PROJEÇÃO COMISSÃO:")
 print(f'Comissão atual: R$ {total_comissao_atual:,.2f}')
 print(f'Média diária: R$ {media_diaria_comissao:,.2f}')
@@ -237,7 +237,7 @@ perdas_por_mes = perdas_df.groupby("Mês")[["Quantidade"]].count().reset_index()
 perdas_por_mes["Mês"] = pd.Categorical(perdas_por_mes["Mês"], categories=ordem_meses, ordered=True)
 perdas_por_mes = perdas_por_mes.sort_values("Mês").reset_index(drop=True)
 
-print("-" * 50)
+print("\n" + "-" * 50)
 print("PERDAS POR MÊS:")
 print(perdas_por_mes)
 
@@ -251,7 +251,7 @@ perdas_motivo = perdas_mes_corrente.groupby("Motivo")[["Item"]].count().reset_in
 perdas_motivo = perdas_motivo.sort_values("Item", ascending=False).reset_index(drop=True) # Ordenar por quantidade de perdas
 total_perdas_mes = perdas_motivo["Item"].sum() # Somatório total do número de ocorrências de perdas
 
-print("-" * 50)
+print("\n" + "-" * 50)
 print("PERDAS MÊS CORRENTE:")
 print(perdas_mes_corrente)
 
