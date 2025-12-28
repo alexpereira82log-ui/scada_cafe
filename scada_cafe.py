@@ -46,10 +46,10 @@ produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # 
 perdas_df = perdas_df.rename(columns={'MÊS/ANO': 'Mês'}) #Renomear coluna
 perdas_df = perdas_df.rename(columns={'Data': 'Data da perda'}) #Renomear coluna
 perdas_df = perdas_df.rename(columns={'Responsavel': 'Responsável'}) #Renomear coluna
-perdas_df["Mês"] = pd.to_datetime(perdas_df["Mês"], errors="coerce") # Converter coluna para formato Datetime
+
+perdas_df["Mês"] = pd.to_datetime(perdas_df["Data da perda"],format="%Y-%m-%d" ,errors="coerce") # Converter coluna para formato Datetime
 #perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.utf8") # Alterar exibição para apenas o nome do mês
 perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # Alterar exibição para apenas o nome do mês
-
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por Mês
@@ -86,9 +86,9 @@ faturamento_por_dia["Dia"] = pd.Categorical(
 )
 faturamento_por_dia = faturamento_por_dia.sort_values("Dia")
 
-print("-" * 50)
-print("FATURAMENTO POR DIA:")
-print(faturamento_por_dia)
+#print("-" * 50)
+#print("FATURAMENTO POR DIA:")
+#print(faturamento_por_dia)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por DiaDia da Semana
