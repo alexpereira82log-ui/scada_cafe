@@ -893,8 +893,9 @@ def enviar_email():
     <p>- Meta Mês: <strong>R$ {meta_mes_corrente:,.2f}</strong></p>
     <p>- Faturamento Total: <strong>R$ {soma_faturamento:,.2f}</strong></p>
     <p>- Faturamento Médio Dia: <strong>R$ {faturamento_medio_dia:,.2f}</strong></p>
-    <p>- Ticket Médio Dia: <strong>R$ {ticket_medio_dia:,.2f}</strong></p>
     <p>- Média Cupons Dia: <strong>{media_cupons_dia:.0f}</strong></p>
+    <p>- Ticket Médio Dia: <strong>R$ {ticket_medio_dia:,.2f}</strong></p>
+    
     <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
     <p>- Ainda faltam <strong>R$ {meta_mes_corrente - soma_faturamento:,.2f}</strong> para atingirmos a  meta do mês.</p>
     <p> </p>
@@ -902,9 +903,10 @@ def enviar_email():
     <p> </p>
     <p>- Precisamos de <strong>R$ {ticket_meta_dia:,.0f} por mesa ou R$ {fat_meta_dia:,.0f} por dia</strong> para alcançarmos a meta do mês.</p>
     <p> </p>
+
     <p><strong><span style="text-decoration: underline;">FATURAMENTO POR MÊS:</span></strong></p>
     {tabela_mes}
-
+    
     <p><strong><span style="text-decoration: underline;">FATURAMENTO POR DIA DA SEMANA:</span></strong></p>
     {tabela_dia_semana}
 
