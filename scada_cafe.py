@@ -883,16 +883,14 @@ def enviar_email():
     </head>
 
     <body>
-    <p>Olá,</p>
-
-    <p>Segue análises atualizadas referente às vendas da loja Cinema Scada Café.</p>
+    <p>Segue relatório de análises e resultados atualizado referente às vendas de Scada Café (Loja Cinema).</p>
 
     <p><strong><span style="text-decoration: underline;">RESUMO DADOS FATURAMENTO:</span></strong></p>
-    <p>- Meta Mês: <strong>R$ {meta_mes_corrente:,.2f}</strong></p>
-    <p>- Faturamento Total: <strong>R$ {soma_faturamento:,.2f}</strong></p>
-    <p>- Faturamento Médio Dia: <strong>R$ {faturamento_medio_dia:,.2f}</strong></p>
-    <p>- Média Cupons Dia: <strong>{media_cupons_dia:.0f}</strong></p>
-    <p>- Ticket Médio Dia: <strong>R$ {ticket_medio_dia:,.2f}</strong></p>
+    <p style='margin:0;'>- Meta Mês: <strong>R$ {meta_mes_corrente:,.2f}</strong></p>
+    <p style='margin:0;'>- Faturamento Médio Dia: <strong>R$ {faturamento_medio_dia:,.2f}</strong></p>
+    <p style='margin:0;'>- Faturamento Total: <strong>R$ {soma_faturamento:,.2f}</strong></p>
+    <p style='margin:0;'>- Média Cupons Dia: <strong>{media_cupons_dia:.0f}</strong></p>
+    <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_dia:,.2f}</strong></p>
     
     <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
     <p>- Ainda faltam <strong>R$ {meta_mes_corrente - soma_faturamento:,.2f}</strong> para atingirmos a  meta do mês.</p>
@@ -908,10 +906,9 @@ def enviar_email():
     <p><strong><span style="text-decoration: underline;">FATURAMENTO POR DIA DA SEMANA:</span></strong></p>
     {tabela_dia_semana}
 
-    <p>Att,<br>Alex Pereira</p>
+    <p style='margin:0;'>Att,<br>Alex Pereira</p>
+        <img src='{link_imagem}' style='max-width:150px; width:100%; height:auto;'>
 
-
-        <img src='{link_imagem}'>
     </body>
     </html>
     """
@@ -939,5 +936,5 @@ def enviar_email():
 enviar_email()
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# ZZZZZZZZZZZZ:
+# FIM DO CÓDIGO:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
