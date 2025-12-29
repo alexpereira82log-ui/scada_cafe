@@ -829,6 +829,17 @@ from email.mime.text import MIMEText # Biblioteca para manipulação de texto em
 from email.mime.application import MIMEApplication # Biblioteca para manipulação de anexos em emails
 import os # Biblioteca para manipulação de arquivos e diretórios
 
+# Formatação de variáveis para email:
+def dataframe_para_html(df):
+    return df.to_html(
+        index=False,
+        border=0,
+        justify="center",
+        classes="tabela-relatorio"
+    )
+
+
+
 # Criação de função para enviar email:
 def enviar_email():
     msg = MIMEMultipart()
@@ -839,12 +850,71 @@ def enviar_email():
     # Link da imagem de assinatura hospedada
     link_imagem = "https://d3p2amk7tvag7f.cloudfront.net/pdvs/245f27d9196ae3b2c5dcc6dd6f6f1be7f861db7c.png"
     
-    # Corpo do email em HTML
-    corpo_email = f"""<p>Olá,</p>
-    <p>Segue atualização de relatórios diários e acumulados do mês referente as vendas da loja Cinema Scada Café.</p>
-    <p>Att, Alex Pereira</p>
-    <img src='{link_imagem}'>""" # Incluindo a imagem no corpo do email
+    # Corpo do email em HTML:
+    
+    tabela_mes = dataframe_para_html(faturamento_por_mes)
+    tabela_dia_semana = dataframe_para_html(faturamento_dia_semana)
 
+    corpo_email = f"""
+    <html>
+    <head>
+    <style>
+        .tabela-relatorio {{
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }}
+
+        .tabela-relatorio th {{
+            background-color: #2F4F4F;
+            color: #FFFFFF;
+            padding: 8px;
+            border: 1px solid #DDDDDD;
+            text-align: center;
+        }}
+
+        .tabela-relatorio td {{
+            padding: 8px;
+            border: 1px solid #DDDDDD;
+            text-align: center;
+        }}
+    </style>
+    </head>
+
+    <body>
+    <p>Olá,</p>
+
+    <p>Segue análises atualizadas referente às vendas da loja Cinema Scada Café.</p>
+
+    <p><strong><span style="text-decoration: underline;">RESUMO DADOS FATURAMENTO:</span></strong></p>
+    <p>- Meta Mês: <strong>R$ {meta_mes_corrente:,.2f}</strong></p>
+    <p>- Faturamento Total: <strong>R$ {soma_faturamento:,.2f}</strong></p>
+    <p>- Faturamento Médio Dia: <strong>R$ {faturamento_medio_dia:,.2f}</strong></p>
+    <p>- Ticket Médio Dia: <strong>R$ {ticket_medio_dia:,.2f}</strong></p>
+    <p>- Média Cupons Dia: <strong>{media_cupons_dia:.0f}</strong></p>
+    <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
+    <p>- Ainda faltam <strong>R$ {meta_mes_corrente - soma_faturamento:,.2f}</strong> para atingirmos a  meta do mês.</p>
+    <p> </p>
+    <p>- Estamos projetando <strong>R$ {projecao_faturamento:,.2f}</strong> de faturamento no mês.</p>
+    <p> </p>
+    <p>- Precisamos de <strong>R$ {ticket_meta_dia:,.0f} por mesa ou R$ {fat_meta_dia:,.0f} por dia</strong> para alcançarmos a meta do mês.</p>
+    <p> </p>
+    <p><strong><span style="text-decoration: underline;">FATURAMENTO POR MÊS:</span></strong></p>
+    {tabela_mes}
+
+    <p><strong><span style="text-decoration: underline;">FATURAMENTO POR DIA DA SEMANA:</span></strong></p>
+    {tabela_dia_semana}
+
+    <p>Att,<br>Alex Pereira</p>
+
+
+        <img src='{link_imagem}'>
+    </body>
+    </html>
+    """
     msg.attach(MIMEText(corpo_email, "html")) # Anexando o corpo do email em HTML
 
     # Anexar arquivos de uma pasta específica:
@@ -862,6 +932,12 @@ def enviar_email():
     servidor.login(msg["From"], senha_app)  # Substitua pela sua senha de aplicativo
     servidor.send_message(msg)
     servidor.quit()
+
+    # Confirmação envio email:
     print("Email enviado com sucesso!")
     
 enviar_email()
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# ZZZZZZZZZZZZ:
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
