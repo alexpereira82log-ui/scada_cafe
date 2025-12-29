@@ -838,8 +838,6 @@ def dataframe_para_html(df):
         classes="tabela-relatorio"
     )
 
-
-
 # Criação de função para enviar email:
 def enviar_email():
     msg = MIMEMultipart()
