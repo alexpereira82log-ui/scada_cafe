@@ -816,6 +816,52 @@ plt.savefig("dashboard_Mes_Mural.png", dpi=300, bbox_inches="tight")
 
 plt.show()
 
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# XXXXXXXXXXXXXXXX:
+# Envio de relatórios por email:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# Importação de bibliotecas necessárias:
+import smtplib # Biblioteca para envio de emails
+import email.message # Biblioteca para manipulação de mensagens de email
+from senha_email import senha_app # Importa a senha do email de um arquivo externo
+from email.mime.multipart import MIMEMultipart # Biblioteca para manipulação de emails com múltiplas partes
+from email.mime.text import MIMEText # Biblioteca para manipulação de texto em emails
+from email.mime.application import MIMEApplication # Biblioteca para manipulação de anexos em emails
+import os # Biblioteca para manipulação de arquivos e diretórios
+
+# Criação de função para enviar email:
+def enviar_email():
+    msg = MIMEMultipart()
+    msg["Subject"] = "Relatório Scada Café - Loja Cinema"
+    msg["From"] = "alex.pereira82log@gmail.com"
+    msg["To"] = "alex.barista@icloud.com"
+    
+    # Link da imagem de assinatura hospedada
+    link_imagem = "https://d3p2amk7tvag7f.cloudfront.net/pdvs/245f27d9196ae3b2c5dcc6dd6f6f1be7f861db7c.png"
+    
+    # Corpo do email em HTML
+    corpo_email = f"""<p>Olá,</p>
+    <p>Segue atualização de relatórios diários e acumulados do mês referente as vendas da loja Cinema Scada Café.</p>
+    <p>Att, Alex Pereira</p>
+    <img src='{link_imagem}'>""" # Incluindo a imagem no corpo do email
+
+    msg.attach(MIMEText(corpo_email, "html")) # Anexando o corpo do email em HTML
+
+    # Anexar arquivos de uma pasta específica:
+    diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+
+    lista_arquivos = os.listdir(diretorio_atual) # Lista os arquivos na pasta informada
+    for nome_arquivo in lista_arquivos:
+        if nome_arquivo.lower().endswith(".png"):
+            caminho_arquivo = os.path.join(diretorio_atual, nome_arquivo)
+            with open(caminho_arquivo, "rb") as arquivo:
+                msg.attach(MIMEApplication(arquivo.read(), Name=nome_arquivo))
+
+    servidor = smtplib.SMTP("smtp.gmail.com", 587)
+    servidor.starttls()
+    servidor.login(msg["From"], senha_app)  # Substitua pela sua senha de aplicativo
+    servidor.send_message(msg)
+    servidor.quit()
+    print("Email enviado com sucesso!")
+    
+enviar_email()
