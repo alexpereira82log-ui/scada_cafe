@@ -171,7 +171,7 @@ total_cupons_mes = df_mes_corrente['Cupons por Dia'].sum()
 ticket_medio_dia = soma_faturamento / total_cupons_mes
 media_cupons_dia = df_mes_corrente['Cupons por Dia'].mean()
 #projecao_faturamento = soma_faturamento + (faturamento_medio_dia * dias_restantes)
-projecao_faturamento = soma_faturamento + (faturamento_medio_dia * (dias_restantes - 2))
+projecao_faturamento = soma_faturamento + (faturamento_medio_dia * (dias_restantes))
 ticket_meta_dia = (meta_mes_corrente - soma_faturamento) / total_cupons_mes * media_cupons_dia / dias_restantes
 fat_meta_dia = (meta_mes_corrente - soma_faturamento) / dias_restantes
 ticket_meta_dia = (meta_mes_corrente - soma_faturamento) / media_cupons_dia / dias_restantes
@@ -887,8 +887,8 @@ def enviar_email():
 
     <p><strong><span style="text-decoration: underline;">RESUMO DADOS FATURAMENTO:</span></strong></p>
     <p style='margin:0;'>- Meta Mês: <strong>R$ {meta_mes_corrente:,.2f}</strong></p>
-    <p style='margin:0;'>- Faturamento Médio Dia: <strong>R$ {faturamento_medio_dia:,.2f}</strong></p>
     <p style='margin:0;'>- Faturamento Total: <strong>R$ {soma_faturamento:,.2f}</strong></p>
+    <p style='margin:0;'>- Faturamento Médio Dia: <strong>R$ {faturamento_medio_dia:,.2f}</strong></p>
     <p style='margin:0;'>- Média Cupons Dia: <strong>{media_cupons_dia:.0f}</strong></p>
     <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_dia:,.2f}</strong></p>
     
