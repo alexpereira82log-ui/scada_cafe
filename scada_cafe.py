@@ -17,7 +17,7 @@ dias_restantes = (ultimo_dia - hoje).days
 print(f"Faltam {dias_restantes} dias para terminar o mês.")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-#Importação de bases:
+#Importação de bases e criação de DataFrames:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 import pandas as pd
 
@@ -33,23 +33,27 @@ import locale
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-faturamento_df = faturamento_df.rename(columns={'Cupom Total': 'Cupons por Dia'}) # Renomear uma coluna
-faturamento_df["% Meta"] = faturamento_df["Faturamento"] / faturamento_df["Meta"] * 100 # Acrescentando uma coluna com percentual da meta
+# Renomear uma coluna:
+faturamento_df = faturamento_df.rename(columns={'Cupom Total': 'Cupons por Dia'})
+# Acrescentando uma coluna com percentual da meta:
+faturamento_df["% Meta"] = faturamento_df["Faturamento"] / faturamento_df["Meta"] * 100
+# Substituir formato da coluna Mês atual por descrição do mês:
+#faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.utf8")
+faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
 
-#faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.utf8") # Substituir formato da coluna Mês atual por descrição do mês
-faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # Substituir formato da coluna Mês atual por descrição do mês
+# Substituir formato da coluna Mês atual por descrição do mês:
+#produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.utf8") 
+produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
 
-#produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.utf8") # Substituir formato da coluna Mês atual por descrição do mês
-produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # Substituir formato da coluna Mês atual por descrição do mês
-
-# Tratamento dados cinema:
-perdas_df = perdas_df.rename(columns={'MÊS/ANO': 'Mês'}) #Renomear coluna
-perdas_df = perdas_df.rename(columns={'Data': 'Data da perda'}) #Renomear coluna
-perdas_df = perdas_df.rename(columns={'Responsavel': 'Responsável'}) #Renomear coluna
-
-perdas_df["Mês"] = pd.to_datetime(perdas_df["Data da perda"],format="%Y-%m-%d" ,errors="coerce") # Converter coluna para formato Datetime
-#perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.utf8") # Alterar exibição para apenas o nome do mês
-perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # Alterar exibição para apenas o nome do mês
+#Renomear colunas:
+perdas_df = perdas_df.rename(columns={'MÊS/ANO': 'Mês'})
+perdas_df = perdas_df.rename(columns={'Data': 'Data da perda'})
+perdas_df = perdas_df.rename(columns={'Responsavel': 'Responsável'})
+# Converter coluna para formato Datetime:
+perdas_df["Mês"] = pd.to_datetime(perdas_df["Data da perda"],format="%Y-%m-%d" ,errors="coerce")
+# Alterar exibição para apenas o nome do mês:
+#perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.utf8")
+perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por Mês
@@ -59,7 +63,8 @@ ordem_meses = [
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ]
 
-faturamento_por_mes = faturamento_df.groupby("Mês")[["Faturamento", "Meta"]].sum().reset_index() # Gerar o somatório de faturamento por mês
+# Gerar o somatório de faturamento por mês:
+faturamento_por_mes = faturamento_df.groupby("Mês")[["Faturamento", "Meta"]].sum().reset_index()
 
 # Ordenar os meses de forma correta (crescente):
 faturamento_por_mes["Mês"] = pd.Categorical(
