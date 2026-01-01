@@ -16,6 +16,12 @@ dias_restantes = (ultimo_dia - hoje).days
 
 print(f"Faltam {dias_restantes} dias para terminar o mês.")
 
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+ANO_EXIBICAO = 2025
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 #Importação de bases e criação de DataFrames:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -25,6 +31,17 @@ faturamento_df = pd.read_excel("base_cinema.xlsx")
 produtos_df = pd.read_excel('base_cinema_produtos.xlsx')
 perdas_df = pd.read_excel('base_cinema_perdas.xlsx')
 comissao_df = pd.read_excel('base_cinema_comissao.xlsx')
+
+# Converter colunas para formato Datetime:
+#faturamento_df["Dia"] = pd.to_datetime(faturamento_df["Dia"], errors="coerce")
+produtos_df["Dia"] = pd.to_datetime(produtos_df["Mês"], errors="coerce")
+perdas_df["Data"] = pd.to_datetime(perdas_df["Data"], errors="coerce")
+
+# Filtrar dados do ano de exibição:
+faturamento_df = faturamento_df[faturamento_df["Dia"].dt.year == ANO_EXIBICAO]
+produtos_df = produtos_df[produtos_df["Mês"].dt.year == ANO_EXIBICAO]
+perdas_df = perdas_df[perdas_df["Data"].dt.year == ANO_EXIBICAO]
+
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Tratamento de dados:
@@ -54,6 +71,7 @@ perdas_df["Mês"] = pd.to_datetime(perdas_df["Data da perda"],format="%Y-%m-%d" 
 # Alterar exibição para apenas o nome do mês:
 #perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.utf8")
 perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
+
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por Mês
