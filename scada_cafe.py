@@ -18,7 +18,8 @@ print(f"Faltam {dias_restantes} dias para terminar o mês.")
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-ANO_EXIBICAO = 2025
+ANO_EXIBICAO = 2026
+MES_EXIBICAO = 1
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
@@ -174,8 +175,8 @@ print(produtos_por_mes.head(10))
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # FILTRAR MES CORRENTE em:
 df_mes_corrente = faturamento_df[
-    (faturamento_df['Dia'].dt.year == 2025) &
-    (faturamento_df['Dia'].dt.month == 12)
+    (faturamento_df['Dia'].dt.year == ANO_EXIBICAO) &
+    (faturamento_df['Dia'].dt.month == MES_EXIBICAO)
 ]
 
 import calendar
