@@ -16,8 +16,15 @@ dias_restantes = (ultimo_dia - hoje).days
 
 print(f"Faltam {dias_restantes} dias para terminar o mês.")
 
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-#Importação de bases:
+ANO_EXIBICAO = 2026
+MES_EXIBICAO = 1
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#Importação de bases e criação de DataFrames:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 import pandas as pd
 
@@ -26,6 +33,17 @@ produtos_df = pd.read_excel('base_cinema_produtos.xlsx')
 perdas_df = pd.read_excel('base_cinema_perdas.xlsx')
 comissao_df = pd.read_excel('base_cinema_comissao.xlsx')
 
+# Converter colunas para formato Datetime:
+#faturamento_df["Dia"] = pd.to_datetime(faturamento_df["Dia"], errors="coerce")
+produtos_df["Dia"] = pd.to_datetime(produtos_df["Mês"], errors="coerce")
+perdas_df["Data"] = pd.to_datetime(perdas_df["Data"], errors="coerce")
+
+# Filtrar dados do ano de exibição:
+faturamento_df = faturamento_df[faturamento_df["Dia"].dt.year == ANO_EXIBICAO]
+produtos_df = produtos_df[produtos_df["Mês"].dt.year == ANO_EXIBICAO]
+perdas_df = perdas_df[perdas_df["Data"].dt.year == ANO_EXIBICAO]
+
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Tratamento de dados:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -33,23 +51,28 @@ import locale
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-faturamento_df = faturamento_df.rename(columns={'Cupom Total': 'Cupons por Dia'}) # Renomear uma coluna
-faturamento_df["% Meta"] = faturamento_df["Faturamento"] / faturamento_df["Meta"] * 100 # Acrescentando uma coluna com percentual da meta
+# Renomear uma coluna:
+faturamento_df = faturamento_df.rename(columns={'Cupom Total': 'Cupons por Dia'})
+# Acrescentando uma coluna com percentual da meta:
+faturamento_df["% Meta"] = faturamento_df["Faturamento"] / faturamento_df["Meta"] * 100
+# Substituir formato da coluna Mês atual por descrição do mês:
+#faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.utf8")
+faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
 
-#faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.utf8") # Substituir formato da coluna Mês atual por descrição do mês
-faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # Substituir formato da coluna Mês atual por descrição do mês
+# Substituir formato da coluna Mês atual por descrição do mês:
+#produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.utf8") 
+produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
 
-#produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.utf8") # Substituir formato da coluna Mês atual por descrição do mês
-produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # Substituir formato da coluna Mês atual por descrição do mês
+#Renomear colunas:
+perdas_df = perdas_df.rename(columns={'MÊS/ANO': 'Mês'})
+perdas_df = perdas_df.rename(columns={'Data': 'Data da perda'})
+perdas_df = perdas_df.rename(columns={'Responsavel': 'Responsável'})
+# Converter coluna para formato Datetime:
+perdas_df["Mês"] = pd.to_datetime(perdas_df["Data da perda"],format="%Y-%m-%d" ,errors="coerce")
+# Alterar exibição para apenas o nome do mês:
+#perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.utf8")
+perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
 
-# Tratamento dados cinema:
-perdas_df = perdas_df.rename(columns={'MÊS/ANO': 'Mês'}) #Renomear coluna
-perdas_df = perdas_df.rename(columns={'Data': 'Data da perda'}) #Renomear coluna
-perdas_df = perdas_df.rename(columns={'Responsavel': 'Responsável'}) #Renomear coluna
-
-perdas_df["Mês"] = pd.to_datetime(perdas_df["Data da perda"],format="%Y-%m-%d" ,errors="coerce") # Converter coluna para formato Datetime
-#perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.utf8") # Alterar exibição para apenas o nome do mês
-perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.UTF-8") # Alterar exibição para apenas o nome do mês
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por Mês
@@ -59,7 +82,8 @@ ordem_meses = [
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ]
 
-faturamento_por_mes = faturamento_df.groupby("Mês")[["Faturamento", "Meta"]].sum().reset_index() # Gerar o somatório de faturamento por mês
+# Gerar o somatório de faturamento por mês:
+faturamento_por_mes = faturamento_df.groupby("Mês")[["Faturamento", "Meta"]].sum().reset_index()
 
 # Ordenar os meses de forma correta (crescente):
 faturamento_por_mes["Mês"] = pd.Categorical(
@@ -76,12 +100,12 @@ print(faturamento_por_mes)
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por Dia
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-faturamento_por_dia = faturamento_df.groupby("Dia")["Faturamento"].sum().reset_index() # Gerar o somatório de faturamento por mês
+# Gerar o somatório de faturamento por mês
+faturamento_por_dia = faturamento_df.groupby("Dia")["Faturamento"].sum().reset_index()
 
 # Ordenar os dias de forma correta (crescente):
 faturamento_por_dia["Dia"] = pd.Categorical(
     faturamento_por_dia["Dia"],
-    #categories=ordem_meses,
     ordered=True
 )
 faturamento_por_dia = faturamento_por_dia.sort_values("Dia")
@@ -96,7 +120,7 @@ faturamento_por_dia = faturamento_por_dia.sort_values("Dia")
 faturamento_dia_semana = faturamento_df.groupby("Dia semana")[["Faturamento", "Ticket Médio", "Cupons por Dia"]].mean().round(2).reset_index()
 ordem_dias_semana = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
 
-# Ordenar os meses de forma correta (crescente):
+# Ordenar os dias da semana de forma correta (crescente):
 faturamento_dia_semana["Dia semana"] = pd.Categorical(
     faturamento_dia_semana["Dia semana"],
     categories=ordem_dias_semana,
@@ -111,21 +135,27 @@ print(faturamento_dia_semana)
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Produtos mais vendidos no Ano e no Mês
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-produtos_por_mes = produtos_df.loc[produtos_df['Mês'] == "Dezembro", :] # Filtrar os dados do mês desejado
+# Filtrar os dados do mês desejado:
+produtos_por_mes = produtos_df.loc[produtos_df['Mês'] == "Dezembro", :]
 produtos_por_mes = produtos_por_mes.sort_values("Valor Total", ascending=False)
 
 total_fat_ano = faturamento_df["Faturamento"].sum()
 
-produtos_ano = produtos_df.groupby("Produto")["Valor Total"].sum().reset_index() # Somar o valor total por produto no ano
+# Somar o valor total por produto no ano:
+produtos_ano = produtos_df.groupby("Produto")["Valor Total"].sum().reset_index()
 produtos_ano = produtos_ano.sort_values("Valor Total", ascending=False)
-produtos_ano["% do Fat Total"] = produtos_ano["Valor Total"] / total_fat_ano #inserir coluna com percentual
-produtos_ano["Média Fat Mensal"] = produtos_ano["Valor Total"] / mes #inserir coluna com média mensal
+#inserir coluna com percentual:
+produtos_ano["% do Fat Total"] = produtos_ano["Valor Total"] / total_fat_ano
+#inserir coluna com média mensal:
+produtos_ano["Média Fat Mensal"] = produtos_ano["Valor Total"] / mes
 
-def formatar(valor): # Função para formatar valores em reais
+# Função para formatar valores em reais (R$):
+def formatar(valor):
     valor_formatado = f"R$ {valor:,.2f}"
     return valor_formatado
 
-def formatar_perc(percentual): # Função para formatar valores percentuais
+# Função para formatar valores percentuais
+def formatar_perc(percentual):
     percentual_formatado = f"{percentual:.2%}"
     return percentual_formatado
 
@@ -144,15 +174,14 @@ print(produtos_por_mes.head(10))
 # Criação de variáveis e funções
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # FILTRAR MES CORRENTE em:
-
 df_mes_corrente = faturamento_df[
-    (faturamento_df['Dia'].dt.year == 2025) &
-    (faturamento_df['Dia'].dt.month == 12)
+    (faturamento_df['Dia'].dt.year == ANO_EXIBICAO) &
+    (faturamento_df['Dia'].dt.month == MES_EXIBICAO)
 ]
 
 import calendar
 import locale
-# Configura o locale para Português do Brasil (Pode ser necessário dependendo do ambiente)
+# Configura o locale para Português do Brasil (Pode ser necessário dependendo do ambiente):
 #locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
 locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 # Se a linha acima falhar, tente: locale.setlocale(locale.LC_TIME, 'portuguese')
@@ -170,7 +199,6 @@ faturamento_medio_dia = df_mes_corrente['Faturamento'].mean()
 total_cupons_mes = df_mes_corrente['Cupons por Dia'].sum()
 ticket_medio_dia = soma_faturamento / total_cupons_mes
 media_cupons_dia = df_mes_corrente['Cupons por Dia'].mean()
-#projecao_faturamento = soma_faturamento + (faturamento_medio_dia * dias_restantes)
 projecao_faturamento = soma_faturamento + (faturamento_medio_dia * (dias_restantes))
 ticket_meta_dia = (meta_mes_corrente - soma_faturamento) / total_cupons_mes * media_cupons_dia / dias_restantes
 fat_meta_dia = (meta_mes_corrente - soma_faturamento) / dias_restantes
@@ -214,7 +242,7 @@ print(f"Dias trabalhados Equipe 2: {total_dias_eq_2}")
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # arredondar coluna rateio:
 comissao_df['Vlr Final'] = comissao_df['Vlr Final'].round(2)
-#excluir linhas com valor zero na coluna 'Vlr Final':
+# Excluir linhas com valor zero na coluna 'Vlr Final':
 comissao_df = comissao_df[comissao_df['Vlr Final'] != 0]
 
 total_comissao_atual = comissao_df['Vlr Final'].sum()
@@ -244,12 +272,14 @@ print(perdas_por_mes)
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # PERDAS: Por Motivo
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# Filtrar perdas do mês corrente
+# Filtrar perdas do mês corrente:
 perdas_mes_corrente = perdas_df[perdas_df['Mês'] == nome_do_mes_corrente]
 # Contagem por Motivo
 perdas_motivo = perdas_mes_corrente.groupby("Motivo")[["Item"]].count().reset_index()
-perdas_motivo = perdas_motivo.sort_values("Item", ascending=False).reset_index(drop=True) # Ordenar por quantidade de perdas
-total_perdas_mes = perdas_motivo["Item"].sum() # Somatório total do número de ocorrências de perdas
+# Ordenar por quantidade de perdas:
+perdas_motivo = perdas_motivo.sort_values("Item", ascending=False).reset_index(drop=True)
+# Somatório total do número de ocorrências de perdas:
+total_perdas_mes = perdas_motivo["Item"].sum()
 
 print("\n" + "-" * 50)
 print("PERDAS MÊS CORRENTE:")
@@ -818,7 +848,7 @@ plt.show()
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# Envio de relatórios por email:
+# ENVIO DE RELATÓRIO POR EMAIL:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Importação de bibliotecas necessárias:
 import smtplib # Biblioteca para envio de emails
@@ -845,11 +875,10 @@ def enviar_email():
     msg["From"] = "alex.pereira82log@gmail.com"
     msg["To"] = "alex.barista@icloud.com"
     
-    # Link da imagem de assinatura hospedada
+    # Link da imagem de assinatura hospedada:
     link_imagem = "https://d3p2amk7tvag7f.cloudfront.net/pdvs/245f27d9196ae3b2c5dcc6dd6f6f1be7f861db7c.png"
     
     # Corpo do email em HTML:
-    
     tabela_mes = dataframe_para_html(faturamento_por_mes)
     tabela_dia_semana = dataframe_para_html(faturamento_dia_semana)
 
@@ -912,12 +941,15 @@ def enviar_email():
     </body>
     </html>
     """
-    msg.attach(MIMEText(corpo_email, "html")) # Anexando o corpo do email em HTML
+    
+    # Anexando o corpo do email em HTML
+    msg.attach(MIMEText(corpo_email, "html"))
 
     # Anexar arquivos de uma pasta específica:
     diretorio_atual = os.path.dirname(os.path.abspath(__file__))
 
-    lista_arquivos = os.listdir(diretorio_atual) # Lista os arquivos na pasta informada
+    # Lista os arquivos na pasta informada
+    lista_arquivos = os.listdir(diretorio_atual)
     for nome_arquivo in lista_arquivos:
         if nome_arquivo.lower().endswith(".png"):
             caminho_arquivo = os.path.join(diretorio_atual, nome_arquivo)
@@ -926,7 +958,8 @@ def enviar_email():
 
     servidor = smtplib.SMTP("smtp.gmail.com", 587)
     servidor.starttls()
-    servidor.login(msg["From"], senha_app)  # Substitua pela sua senha de aplicativo
+    # Substitua pela sua senha de aplicativo
+    servidor.login(msg["From"], senha_app)
     servidor.send_message(msg)
     servidor.quit()
 
