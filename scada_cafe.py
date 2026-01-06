@@ -18,8 +18,11 @@ print(f"Faltam {dias_restantes} dias para terminar o mês.")
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-ANO_EXIBICAO = 2026
-MES_EXIBICAO = 1
+#ANO_EXIBICAO = 2026
+#MES_EXIBICAO = 1
+
+ANO_EXIBICAO = int(input("Digite o ano a ser analisado (YYYY): "))
+MES_EXIBICAO = int(input("Digite o mês a ser analisado (MM): "))
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
