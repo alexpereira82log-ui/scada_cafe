@@ -536,7 +536,7 @@ axs["E"].set_title(f'Perdas por Categoria', fontsize=14, weight='bold')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # # AJUSTES FIGURA:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-fig.suptitle(f"Dashboard Scada Café - Loja Cinema - {nome_do_mes_corrente} 2025", fontsize=16, fontweight='bold', color='darkgrey')
+fig.suptitle(f"Dashboard Scada Café - Loja Cinema - {nome_do_mes_corrente} {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
 
 # Gerar arquivo .PNG do gráfico:
 plt.savefig("dashboard_Mes_Corrente.png", dpi=300, bbox_inches="tight")
@@ -593,7 +593,7 @@ axs["A"].axhline(y=media_faturamento_mes, color="darkred", linestyle="--", alpha
             label=f"Média ({media_faturamento_mes:,.0f})")
 
 # === Personalização ===
-axs["A"].set_title("Faturamento x Meta Mensal", fontsize=14, weight='bold')
+axs["A"].set_title(f"Faturamento x Meta Mensal {ANO_EXIBICAO}", fontsize=14, weight='bold')
 #ax.set_xlabel("Mês")
 axs["A"].set_ylabel("Valores (R$)")
 axs["A"].tick_params(axis="x", rotation=45, labelsize=8)
@@ -634,7 +634,7 @@ for dia, faturamento in zip(faturamento_por_dia['Mês'], faturamento_por_dia['Fa
     )
 
 # --- 3. Personalização e Visualização ---
-axs["B"].set_title('Faturamento Médio - 2025', fontsize=14, weight='bold')
+axs["B"].set_title(f'Faturamento Médio - {ANO_EXIBICAO}', fontsize=14, weight='bold')
 axs["B"].set_xlabel('Meses', fontsize=10)
 axs["B"].set_ylabel('Média Faturamento (R$)', fontsize=10)
 
@@ -673,7 +673,7 @@ axs["C"].plot(ticket_medio_mes['Dia'], ticket_medio_mes['Ticket Médio'],
          marker='o', linestyle='-', linewidth=2, label='Ticket Médio Diário')
 axs["C"].set_ylabel('Ticket Médio (R$)', color='steelblue', fontsize=10)
 axs["C"].tick_params(axis='y', labelcolor="steelblue")
-axs["C"].set_title('Relação Ticket Médio x Número de Cupons - 2025', fontsize=11, weight='bold')
+axs["C"].set_title(f'Relação Ticket Médio x Número de Cupons - {ANO_EXIBICAO}', fontsize=11, weight='bold')
 axs["C"].set_xlabel('Meses', fontsize=10)
 
 # Valores sobre os Pontos Ticket Médio (Rótulos de Dados):
@@ -711,7 +711,7 @@ axs["C"].set_xticks(dias)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # # AJUSTES FIGURA:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-fig.suptitle("Dashboard Mês a Mês - Scada Café - Loja Cinema - 2025", fontsize=16, fontweight='bold', color='darkgrey')
+fig.suptitle(f"Dashboard Mês a Mês - Scada Café - Loja Cinema - {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
 
 # Gerar arquivo .PNG do gráfico:
 plt.savefig("dashboard_Mes_a_Mes.png", dpi=300, bbox_inches="tight")
@@ -839,7 +839,7 @@ axs["C"].set_title(f'Perdas por Categoria', fontsize=14, weight='bold')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # # AJUSTES FIGURA:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-fig.suptitle(f"Dashboard - Scada Café - Loja Cinema - 2025 (Resultado Parcial)", fontsize=16, fontweight='bold', color='darkgrey')
+fig.suptitle(f"Dashboard - Scada Café - Loja Cinema - {ANO_EXIBICAO} (Resultado Parcial)", fontsize=16, fontweight='bold', color='darkgrey')
 
 # Gerar arquivo .PNG do gráfico:
 plt.savefig("dashboard_Mes_Mural.png", dpi=300, bbox_inches="tight")
@@ -871,7 +871,7 @@ def dataframe_para_html(df):
 # Criação de função para enviar email:
 def enviar_email():
     msg = MIMEMultipart()
-    msg["Subject"] = "Relatório Scada Café - Loja Cinema"
+    msg["Subject"] = f"Relatório Scada Café - Loja Cinema - {ANO_EXIBICAO}"
     msg["From"] = "alex.pereira82log@gmail.com"
     msg["To"] = "alex.barista@icloud.com"
     
@@ -913,6 +913,7 @@ def enviar_email():
 
     <body>
     <p>Segue relatório de análises e resultados atualizado referente às vendas de Scada Café (Loja Cinema).</p>
+    <p style='margin:0;'><strong>{nome_do_mes_corrente} {ANO_EXIBICAO}</strong></p>
 
     <p><strong><span style="text-decoration: underline;">RESUMO DADOS FATURAMENTO:</span></strong></p>
     <p style='margin:0;'>- Meta Mês: <strong>R$ {meta_mes_corrente:,.2f}</strong></p>
