@@ -10,6 +10,7 @@ import datetime
 hoje = datetime.date.today()
 ano = hoje.year
 mes = hoje.month
+#mes_nome = hoje.strftime("%B")
 # Calcular último dia do mês corrente:
 if mes == 12:
     ultimo_dia = datetime.date(ano + 1, 1, 1) - datetime.timedelta(days=1)
@@ -40,12 +41,12 @@ comissao_df = pd.read_excel('base_cinema_comissao.xlsx')
 # Converter colunas para formato Datetime:
 #faturamento_df["Dia"] = pd.to_datetime(faturamento_df["Dia"], errors="coerce")
 produtos_df["Dia"] = pd.to_datetime(produtos_df["Mês"], errors="coerce")
-perdas_df["Data"] = pd.to_datetime(perdas_df["Data"], errors="coerce")
+#perdas_df["Data"] = pd.to_datetime(perdas_df["Data"], errors="coerce")
 
 # Filtrar dados do ano de exibição:
 faturamento_df = faturamento_df[faturamento_df["Dia"].dt.year == ANO_EXIBICAO]
 produtos_df = produtos_df[produtos_df["Mês"].dt.year == ANO_EXIBICAO]
-perdas_df = perdas_df[perdas_df["Data"].dt.year == ANO_EXIBICAO]
+perdas_df = perdas_df[perdas_df["Data da perda"].dt.year == ANO_EXIBICAO]
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -68,14 +69,13 @@ faturamento_df["Mês"] = faturamento_df["Mês"].dt.month_name(locale="pt_BR.UTF-
 produtos_df["Mês"] = produtos_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
 
 #Renomear colunas:
-perdas_df = perdas_df.rename(columns={'MÊS/ANO': 'Mês'})
-perdas_df = perdas_df.rename(columns={'Data': 'Data da perda'})
-perdas_df = perdas_df.rename(columns={'Responsavel': 'Responsável'})
-# Converter coluna para formato Datetime:
-perdas_df["Mês"] = pd.to_datetime(perdas_df["Data da perda"],format="%Y-%m-%d" ,errors="coerce")
-# Alterar exibição para apenas o nome do mês:
-#perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.utf8")
-perdas_df["Mês"] = perdas_df["Mês"].dt.month_name(locale="pt_BR.UTF-8")
+perdas_df = perdas_df.rename(columns={'Item (Descrição do item da perda)': 'Item'})
+perdas_df = perdas_df.rename(columns={'Quantidade (Qtd, peso, etc)': 'Quantidade'})
+perdas_df = perdas_df.rename(columns={'Observação (Detalhamento. O que aconteceu?)': 'Observação'})
+
+# Incluir coluna de mês
+#perdas_df["Mês"] = perdas_df["Data da perda"].dt.strftime("%B")
+perdas_df["Mês"] = perdas_df["Data da perda"].dt.month_name(locale="pt_BR.UTF-8").str.capitalize()
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -97,9 +97,6 @@ faturamento_por_mes["Mês"] = pd.Categorical(
 )
 faturamento_por_mes = faturamento_por_mes.sort_values("Mês")
 
-#print("\n" + "-" * 50)
-#print("FATURAMENTO POR MÊS:")
-#print(faturamento_por_mes)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por Dia
@@ -114,9 +111,6 @@ faturamento_por_dia["Dia"] = pd.Categorical(
 )
 faturamento_por_dia = faturamento_por_dia.sort_values("Dia")
 
-#print("-" * 50)
-#print("FATURAMENTO POR DIA:")
-#print(faturamento_por_dia)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Análise de Dados Por DiaDia da Semana
@@ -132,9 +126,6 @@ faturamento_dia_semana["Dia semana"] = pd.Categorical(
 )
 faturamento_dia_semana = faturamento_dia_semana.sort_values("Dia semana")
 
-#print("\n" + "-" * 50)
-#print("MÉDIAS POR DIA DA SEMANA:")
-#print(faturamento_dia_semana)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Produtos mais vendidos no Ano e no Mês
@@ -167,12 +158,6 @@ produtos_ano["Valor Total"] = produtos_ano["Valor Total"].apply(formatar)
 produtos_ano["Média Fat Mensal"] = produtos_ano["Média Fat Mensal"].apply(formatar)
 produtos_ano["% do Fat Total"] = produtos_ano["% do Fat Total"].apply(formatar_perc)
 
-#print("\n" + "-" * 50)
-#print(f"Faturamento Total Ano: R$ {total_fat_ano:,.2f}")
-#print("Produtos mais vendidos do Ano:")
-#print(produtos_ano.head(10)) # Exibir os 10 produtos mais vendidos do Ano
-#print("Produtos mais vendidos do Mês:")
-#print(produtos_por_mes.head(10))
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Criação de variáveis e funções
@@ -214,32 +199,6 @@ ticket_eq_2 = df_mes_corrente[df_mes_corrente['Equipe'] == 2]['Ticket Médio'].m
 total_dias_eq_1 = df_mes_corrente[df_mes_corrente['Equipe'] == 1]['Dia'].nunique()
 total_dias_eq_2 = df_mes_corrente[df_mes_corrente['Equipe'] == 2]['Dia'].nunique()
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# Resumo de Resultados:
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# EXIBIÇÕES:
-#print("\n" + "-" * 50)
-#print(f'- DADOS FATURAMENTO - {nome_do_mes_corrente}:')
-#print(f'Meta Mês: R$ {meta_mes_corrente:,.2f}')
-#print(f'Faturamento: R$ {soma_faturamento:,.2f}')
-#print(f'% Meta: {soma_faturamento / meta_mes_corrente:.0%}')
-#print(f'Faturamento Médio Dia: R$ {faturamento_medio_dia:,.2f}')
-#print(f'Ticket Médio Dia: R$ {ticket_medio_dia:,.2f}')
-#print(f'Média Cupons Dia: {media_cupons_dia:.0f}')
-#print("\n" + "-" * 50)
-#print('- PROJEÇÕES E RECUPERAÇÃO META:')
-#print(f'Ainda faltam R$ {meta_mes_corrente - soma_faturamento:,.2f} para atingirmos a  meta do mês.')
-#print(f'Estamos projetando R$ {projecao_faturamento:,.2f} de faturamento no mês.')
-#print(f'Precisamos de R$ {ticket_meta_dia:,.0f} por mesa ou R$ {fat_meta_dia:,.0f} por dia para alcançarmos a meta do mês.')
-#print(f'Isso representa R$ {ticket_meta_dia - ticket_medio_dia:,.0f} a mais por mesa mediante aos R$ {ticket_medio_dia:,.0f} realizado atualmente.')
-#print("\n" + "-" * 50)
-#print('- RESULTADO POR EQUIPE:')
-#print(f'Faturamento Equipe 01: R$ {fat_total_eq_1:,.0f}')
-#print(f'Faturamento Equipe 02: R$ {fat_total_eq_2:,.0f}')
-#print(f'Ticket Médio Equipe 01: R$ {ticket_eq_1:,.0f}')
-#print(f'Ticket Médio Equipe 02: R$ {ticket_eq_2:,.0f}')
-#print(f"Dias trabalhados Equipe 1: {total_dias_eq_1}")
-#print(f"Dias trabalhados Equipe 2: {total_dias_eq_2}")
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Projeção Comissão:
@@ -254,11 +213,6 @@ media_diaria_comissao = comissao_df['Vlr Final'].mean()
 projecao_comissao = (total_comissao_atual + (media_diaria_comissao * dias_restantes))#print("\n" + "-" * 50)
 
 
-#print("PROJEÇÃO COMISSÃO:")
-#print(f'Comissão atual: R$ {total_comissao_atual:,.2f}')
-#print(f'Média diária: R$ {media_diaria_comissao:,.2f}')
-#print(f"Projeção comissão: R$ {projecao_comissao:,.2f}")
-
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # PERDAS: Por Mês
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -266,33 +220,22 @@ projecao_comissao = (total_comissao_atual + (media_diaria_comissao * dias_restan
 perdas_por_mes = perdas_df.groupby("Mês")[["Quantidade"]].count().reset_index()
 
 # Ordenar meses de forma correta (crescente):
-perdas_por_mes["Mês"] = pd.Categorical(perdas_por_mes["Mês"], categories=ordem_meses, ordered=True)
+#perdas_por_mes["Mês"] = pd.Categorical(perdas_por_mes["Mês"], categories=ordem_meses, ordered=True)
 perdas_por_mes = perdas_por_mes.sort_values("Mês").reset_index(drop=True)
 
-#print("\n" + "-" * 50)
-#print("PERDAS POR MÊS:")
-#print(perdas_por_mes)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # PERDAS: Por Motivo
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Filtrar perdas do mês corrente:
-perdas_mes_corrente = perdas_df[perdas_df['Mês'] == nome_do_mes_corrente]
+#perdas_mes_corrente = perdas_df[perdas_df['Mês'] == mes_nome]
+
 # Contagem por Motivo
-perdas_motivo = perdas_mes_corrente.groupby("Motivo")[["Item"]].count().reset_index()
+perdas_motivo = perdas_df.groupby("Motivo")[["Item"]].count().reset_index()
 # Ordenar por quantidade de perdas:
 perdas_motivo = perdas_motivo.sort_values("Item", ascending=False).reset_index(drop=True)
 # Somatório total do número de ocorrências de perdas:
 total_perdas_mes = perdas_motivo["Item"].sum()
-
-#print("\n" + "-" * 50)
-#print("PERDAS MÊS CORRENTE:")
-#print(perdas_mes_corrente)
-
-#print("PERDAS POR MOTIVO:")
-#print(perdas_motivo)
-#print(f"Total: {total_perdas_mes}")
-
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -348,7 +291,7 @@ while True:
         print("Produtos mais vendidos do Mês:")
         print(produtos_por_mes.head(10))
         print("Produtos mais vendidos do Ano:")
-        print(produtos_ano.head(10)) # Exibir os 10 produtos mais vendidos do Ano
+        print(produtos_ano.head(10))
         aguardar_comando()
 
     elif escolha == "5":
@@ -404,7 +347,7 @@ while True:
     elif escolha == "10":
         print("\n" + "-" * 50)
         print("PERDAS MÊS CORRENTE:")
-        print(perdas_mes_corrente)
+        print(perdas_df)
         print("\n" + "-" * 50)
         print("PERDAS POR MOTIVO:")
         print(perdas_motivo)
