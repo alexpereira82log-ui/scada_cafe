@@ -252,6 +252,8 @@ def aguardar_comando():
 
 while True:
     os.system("cls" if os.name == "nt" else "clear")
+    print("DADOS SCADA CAFE - CINEMA")
+    print("-----------------------------------")
     print("1 Faturamento por Mês")
     print("2 Faturamento por Dia")
     print("3 Média Fat por Dia da Semana")
@@ -596,7 +598,7 @@ while True:
         fig.suptitle(f"Dashboard Scada Café - Loja Cinema - {nome_do_mes_corrente} {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
 
         # Gerar arquivo .PNG do gráfico:
-        plt.savefig("dashboard_Mes_Corrente.png", dpi=300, bbox_inches="tight")
+        plt.savefig("dashboard_Mes_Corrente_cinema.png", dpi=300, bbox_inches="tight")
 
         plt.show()
         aguardar_comando()
@@ -786,7 +788,7 @@ while True:
         fig.suptitle(f"Dashboard Mês a Mês - Scada Café - Loja Cinema - {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
 
         # Gerar arquivo .PNG do gráfico:
-        plt.savefig("dashboard_Mes_a_Mes.png", dpi=300, bbox_inches="tight")
+        plt.savefig("dashboard_Mes_a_Mes_cinema.png", dpi=300, bbox_inches="tight")
 
         plt.show()
         aguardar_comando()
@@ -925,10 +927,10 @@ while True:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # # AJUSTES FIGURA:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        fig.suptitle(f"Dashboard - Scada Café - Loja Cinema - {ANO_EXIBICAO} (Resultado Parcial)", fontsize=16, fontweight='bold', color='darkgrey')
+        fig.suptitle(f"Dashboard - Scada Café - Loja Cinema - {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
 
         # Gerar arquivo .PNG do gráfico:
-        plt.savefig("dashboard_Mes_Mural.png", dpi=300, bbox_inches="tight")
+        plt.savefig("dashboard_Mes_Mural_cinema.png", dpi=300, bbox_inches="tight")
 
         plt.show()
         aguardar_comando()
@@ -1039,7 +1041,7 @@ while True:
             # Lista os arquivos na pasta informada
             lista_arquivos = os.listdir(diretorio_atual)
             for nome_arquivo in lista_arquivos:
-                if nome_arquivo.lower().endswith(".png"):
+                if nome_arquivo.lower().endswith("cinema.png"):
                     caminho_arquivo = os.path.join(diretorio_atual, nome_arquivo)
                     with open(caminho_arquivo, "rb") as arquivo:
                         msg.attach(MIMEApplication(arquivo.read(), Name=nome_arquivo))
