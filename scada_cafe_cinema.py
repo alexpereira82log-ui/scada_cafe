@@ -47,6 +47,7 @@ produtos_df["Dia"] = pd.to_datetime(produtos_df["Mês"], errors="coerce")
 faturamento_df = faturamento_df[faturamento_df["Dia"].dt.year == ANO_EXIBICAO]
 produtos_df = produtos_df[produtos_df["Mês"].dt.year == ANO_EXIBICAO]
 perdas_df = perdas_df[perdas_df["Data da perda"].dt.year == ANO_EXIBICAO]
+perdas_mes_corrente = perdas_df[perdas_df["Data da perda"].dt.month == MES_EXIBICAO]
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -349,7 +350,7 @@ while True:
     elif escolha == "10":
         print("\n" + "-" * 50)
         print("PERDAS MÊS CORRENTE:")
-        print(perdas_df)
+        print(perdas_mes_corrente)
         print("\n" + "-" * 50)
         print("PERDAS POR MOTIVO:")
         print(perdas_motivo)
