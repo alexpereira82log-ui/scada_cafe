@@ -103,7 +103,8 @@ faturamento_por_mes = faturamento_por_mes.sort_values("Mês")
 # Análise de Dados Por Dia
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Gerar o somatório de faturamento por mês
-faturamento_por_dia = faturamento_df.groupby("Dia")["Faturamento"].sum().reset_index()
+faturamento_por_dia = faturamento_df[faturamento_df["Dia"].dt.month == MES_EXIBICAO]
+faturamento_por_dia = faturamento_por_dia.groupby("Dia")["Faturamento"].sum().reset_index()
 
 # Ordenar os dias de forma correta (crescente):
 faturamento_por_dia["Dia"] = pd.Categorical(
