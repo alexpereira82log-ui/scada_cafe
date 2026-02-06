@@ -33,6 +33,10 @@ MES_EXIBICAO = int(input("Digite o número do Mês: "))
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 import pandas as pd
 
+pd.set_option("display.max_columns", None)   # Exibir todas as colunas
+pd.set_option("display.width", None)         # Evitar quebra automática de linha
+pd.set_option("display.max_colwidth", None)  # Não truncar textos longos
+
 faturamento_df = pd.read_excel("base_cinema.xlsx")
 produtos_df = pd.read_excel('base_cinema_produtos.xlsx')
 perdas_df = pd.read_excel('base_cinema_perdas.xlsx')
@@ -48,6 +52,23 @@ faturamento_df = faturamento_df[faturamento_df["Dia"].dt.year == ANO_EXIBICAO]
 produtos_df = produtos_df[produtos_df["Mês"].dt.year == ANO_EXIBICAO]
 perdas_df = perdas_df[perdas_df["Data da perda"].dt.year == ANO_EXIBICAO]
 perdas_mes_corrente = perdas_df[perdas_df["Data da perda"].dt.month == MES_EXIBICAO]
+
+# Renomear colunas:
+perdas_mes_corrente = perdas_mes_corrente.rename(
+    columns={"Item (Descrição do item da perda)": "item"}
+)
+
+perdas_mes_corrente = perdas_mes_corrente.rename(
+    columns={"Observação (Detalhamento. O que aconteceu?)": "Obs."}
+)
+
+perdas_exibicao = perdas_mes_corrente.copy()
+
+perdas_exibicao["Obs."] = perdas_exibicao["Obs."].astype(str).str.slice(0, 10) + "..."
+
+perdas_exibicao = perdas_exibicao.rename(
+    columns={"Quantidade (Qtd, peso, etc)": "Qtd."}
+)
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -237,11 +258,14 @@ perdas_por_mes = perdas_por_mes.sort_values("Mês").reset_index(drop=True)
 #perdas_mes_corrente = perdas_df[perdas_df['Mês'] == mes_nome]
 
 # Contagem por Motivo
-perdas_motivo = perdas_df.groupby("Motivo")[["Item"]].count().reset_index()
+perdas_motivo = perdas_df
+perdas_motivo = perdas_motivo[perdas_motivo["Data da perda"].dt.month == MES_EXIBICAO]
+perdas_motivo_filtrado = perdas_motivo.groupby("Motivo")[["Item"]].count().reset_index()
+#perdas_motivo = perdas_motivo[perdas_motivo["Data da perda"].dt.month == MES_EXIBICAO]
 # Ordenar por quantidade de perdas:
-perdas_motivo = perdas_motivo.sort_values("Item", ascending=False).reset_index(drop=True)
+perdas_motivo_filtrado = perdas_motivo_filtrado.sort_values("Item", ascending=False).reset_index(drop=True)
 # Somatório total do número de ocorrências de perdas:
-total_perdas_mes = perdas_motivo["Item"].sum()
+total_perdas_mes = perdas_motivo_filtrado["Item"].sum()
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -355,10 +379,10 @@ while True:
     elif escolha == "10":
         print("\n" + "-" * 50)
         print("PERDAS MÊS CORRENTE:")
-        print(perdas_mes_corrente)
+        print(perdas_exibicao)
         print("\n" + "-" * 50)
         print("PERDAS POR MOTIVO:")
-        print(perdas_motivo)
+        print(perdas_motivo_filtrado)
         print(f"Total: {total_perdas_mes}")
         print("\n" + "-" * 50)
         aguardar_comando()
@@ -587,8 +611,8 @@ while True:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # PERDAS POR MOTIVO:
         perdas_cat = axs["E"].pie(
-            perdas_motivo['Item'],
-            labels=perdas_motivo['Motivo'],
+            perdas_motivo_filtrado['Item'],
+            labels=perdas_motivo_filtrado['Motivo'],
             autopct='%1.1f%%',
             startangle=140,
             textprops={'fontsize': 10, 'weight': 'bold', 'color': 'black'}
@@ -919,8 +943,8 @@ while True:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # PERDAS POR MOTIVO:
         perdas_cat = axs["C"].pie(
-            perdas_motivo['Item'],
-            labels=perdas_motivo['Motivo'],
+            perdas_motivo_filtrado['Item'],
+            labels=perdas_motivo_filtrado['Motivo'],
             autopct='%1.1f%%',
             startangle=140,
             textprops={'fontsize': 10, 'weight': 'bold', 'color': 'black'}
