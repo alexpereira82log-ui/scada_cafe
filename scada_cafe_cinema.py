@@ -221,8 +221,12 @@ projecao_comissao = (total_comissao_atual + (media_diaria_comissao * dias_restan
 # Agrupar perdas por mês
 perdas_por_mes = perdas_df.groupby("Mês")[["Quantidade"]].count().reset_index()
 
-# Ordenar meses de forma correta (crescente):
-#perdas_por_mes["Mês"] = pd.Categorical(perdas_por_mes["Mês"], categories=ordem_meses, ordered=True)
+# Ordenar os meses de forma correta (crescente):
+perdas_por_mes["Mês"] = pd.Categorical(
+    perdas_por_mes["Mês"],
+    categories=ordem_meses,
+    ordered=True
+)
 perdas_por_mes = perdas_por_mes.sort_values("Mês").reset_index(drop=True)
 
 
