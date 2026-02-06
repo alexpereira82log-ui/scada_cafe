@@ -64,8 +64,9 @@ perdas_mes_corrente = perdas_mes_corrente.rename(
 
 perdas_exibicao = perdas_mes_corrente.copy()
 
+# Limitação de tamanho de exibição da coluna Obs.:
 perdas_exibicao["Obs."] = perdas_exibicao["Obs."].astype(str).str.slice(0, 10) + "..."
-
+# Renomear coluna:
 perdas_exibicao = perdas_exibicao.rename(
     columns={"Quantidade (Qtd, peso, etc)": "Qtd."}
 )
