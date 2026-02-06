@@ -259,12 +259,21 @@ perdas_por_mes = perdas_por_mes.sort_values("Mês").reset_index(drop=True)
 #perdas_mes_corrente = perdas_df[perdas_df['Mês'] == mes_nome]
 
 # Contagem por Motivo
-perdas_motivo = perdas_df
-perdas_motivo = perdas_motivo[perdas_motivo["Data da perda"].dt.month == MES_EXIBICAO]
-perdas_motivo_filtrado = perdas_motivo.groupby("Motivo")[["Item"]].count().reset_index()
+# Por Mës
+perdas_motivo_mes = perdas_df
+perdas_motivo_mes = perdas_motivo_mes[perdas_motivo_mes["Data da perda"].dt.month == MES_EXIBICAO]
+perdas_motivo_filtrado = perdas_motivo_mes.groupby("Motivo")[["Item"]].count().reset_index()
+
+# Por ano:
+perdas_motivo_ano = perdas_df
+perdas_motivo_ano = perdas_motivo_ano[perdas_motivo_ano["Data da perda"].dt.year == ANO_EXIBICAO]
+perdas_motivo_filtrado2 = perdas_motivo_ano.groupby("Motivo")[["Item"]].count().reset_index()
+
+
 #perdas_motivo = perdas_motivo[perdas_motivo["Data da perda"].dt.month == MES_EXIBICAO]
 # Ordenar por quantidade de perdas:
 perdas_motivo_filtrado = perdas_motivo_filtrado.sort_values("Item", ascending=False).reset_index(drop=True)
+perdas_motivo_filtrado2 = perdas_motivo_filtrado2.sort_values("Item", ascending=False).reset_index(drop=True)
 # Somatório total do número de ocorrências de perdas:
 total_perdas_mes = perdas_motivo_filtrado["Item"].sum()
 
@@ -949,8 +958,8 @@ while True:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # PERDAS POR MOTIVO:
         perdas_cat = axs["C"].pie(
-            perdas_motivo_filtrado['Item'],
-            labels=perdas_motivo_filtrado['Motivo'],
+            perdas_motivo_filtrado2['Item'],
+            labels=perdas_motivo_filtrado2['Motivo'],
             autopct='%1.1f%%',
             startangle=140,
             textprops={'fontsize': 10, 'weight': 'bold', 'color': 'black'}
