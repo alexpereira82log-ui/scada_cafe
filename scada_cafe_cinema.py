@@ -568,6 +568,11 @@ while True:
         perdas_mes = axs["D"].bar(perdas_por_mes['Mês'], perdas_por_mes['Quantidade'], color='red', alpha=0.3, label='Perdas')
         media_perdas_mes = perdas_por_mes['Quantidade'].mean()
 
+        perdas_por_mes["Mês"] = pd.Categorical(perdas_por_mes["Mês"],
+                                            categories=ordem_meses,
+                                            ordered=True)
+        perdas_por_mes = perdas_por_mes.sort_values("Mês")
+
         # --- NOVIDADE: Linha de Média ---
         axs["D"].axhline(
             y=media_perdas_mes,
