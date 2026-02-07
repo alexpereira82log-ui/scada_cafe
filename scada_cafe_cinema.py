@@ -47,10 +47,12 @@ comissao_df = pd.read_excel('base_cinema_comissao.xlsx')
 produtos_df["Dia"] = pd.to_datetime(produtos_df["Mês"], errors="coerce")
 #perdas_df["Data"] = pd.to_datetime(perdas_df["Data"], errors="coerce")
 
-# Filtrar dados do ano de exibição:
+# Filtrar dados de exibição por ANO:
 faturamento_df = faturamento_df[faturamento_df["Dia"].dt.year == ANO_EXIBICAO]
 produtos_df = produtos_df[produtos_df["Mês"].dt.year == ANO_EXIBICAO]
 perdas_df = perdas_df[perdas_df["Data da perda"].dt.year == ANO_EXIBICAO]
+
+# Filtrar dados de exibição por MÊS:
 perdas_mes_corrente = perdas_df[perdas_df["Data da perda"].dt.month == MES_EXIBICAO]
 
 # Renomear colunas:
