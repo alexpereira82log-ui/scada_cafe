@@ -58,7 +58,7 @@ base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B").str.capitalize()
 
 
 #------------------------------------------------------------------------------------------------------------
-# FILTRAR DADOS E CRIAÇÃO DE VARIÁVEIS:
+# FILTRAR DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
 # Input para ANO e MES desejado para analises:
 ANO_EXIBICAO = int(input('Digite o Ano: '))
 MES_EXIBICAO = int(input('Digite o Mês: '))
