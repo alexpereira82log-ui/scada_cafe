@@ -104,6 +104,9 @@ media_dia_semana = (
     .mean()
     .reindex(ordem_dias_semana)
 )
+# Reduzir número de casas decimais:
+media_dia_semana = media_dia_semana.round(0)
+
 
 
 
