@@ -103,9 +103,9 @@ media_dia_semana = (
     .groupby(['dia_semana'])['faturamento']
     .mean()
     .reindex(ordem_dias_semana)
+    .round(0)
+    .reset_index()
 )
-# Reduzir número de casas decimais:
-media_dia_semana = media_dia_semana.round(0)
 
 
 
