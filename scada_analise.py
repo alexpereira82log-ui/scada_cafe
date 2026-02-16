@@ -58,7 +58,7 @@ base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B").str.capitalize()
 
 
 #------------------------------------------------------------------------------------------------------------
-# FILTRAR DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
+# FILTRO DE DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
 # Input para ANO e MES desejado para analises:
 ANO_EXIBICAO = int(input('Digite o Ano: '))
 MES_EXIBICAO = int(input('Digite o Mês: '))
@@ -74,11 +74,12 @@ ordem_dias_semana = [
     "domingo"
 ]
 
+# Filtro de dados por Ano e por Mês:
 base_filtro_ano = base_fat_df[base_fat_df["data"].dt.year == ANO_EXIBICAO]
 base_filtro_mes = base_filtro_ano[base_filtro_ano['data'].dt.month == MES_EXIBICAO]
 
 # Soma total do faturamento do mes corrente:
-total_fat_mes_corrente = base_filtro_ano['faturamento'].sum()
+total_fat_mes_corrente = base_filtro_mes['faturamento'].sum()
 
 # Exibe a o total de faturamento de todos os meses do ano ordenados:
 fat_por_mes = (
@@ -107,11 +108,26 @@ media_dia_semana = (
     .reset_index()
 )
 
+# Meta do mês corrente:
+meta_mes = base_filtro_mes['meta'].sum()
+
+# Percentual atingido da meta do mês corrente:
+perc_meta_mes = (total_fat_mes_corrente / meta_mes) * 100
+
+# Mẽdia de faturamento por dia do mês corrente:
+media_fat_dia = fat_por_dia["faturamento"].mean()
+
+# Ticket Mẽdio mês corrente:
+ticket_medio_mes = fat_por_dia['faturamento'].sum() / base_filtro_mes['cupom'].sum()
+
+# Média de cupons por dia do mês corrente:
+media_cupom = base_filtro_mes['cupom'].mean()
 
 
 
 
 #------------------------------------------------------------------------------------------------------------
 
+print(media_cupom)
 
-print(media_dia_semana)
+
