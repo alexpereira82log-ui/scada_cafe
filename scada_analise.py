@@ -35,8 +35,10 @@ import sqlite3
 conexao = sqlite3.connect("faturamento_scada.db")
 base_fat_df = pd.read_sql("SELECT * FROM base_fat", conexao)
 conexao.close()
-#print(base_fat_df.head())
 
+conexao = sqlite3.connect("faturamento_scada.db")
+base_comissao_df = pd.read_sql("SELECT * FROM comissao", conexao)
+conexao.close()
 
 #------------------------------------------------------------------------------------------------------------
 # TRATAMENTO DE DADOS:
@@ -80,7 +82,6 @@ base_filtro_mes = base_filtro_ano[base_filtro_ano['data'].dt.month == MES_EXIBIC
 
 # Soma total do faturamento do mes corrente:
 total_fat_mes_corrente = base_filtro_mes['faturamento'].sum()
-
 # Exibe a o total de faturamento de todos os meses do ano ordenados:
 fat_por_mes = (
     base_filtro_ano
@@ -110,24 +111,41 @@ media_dia_semana = (
 
 # Meta do mês corrente:
 meta_mes = base_filtro_mes['meta'].sum()
-
 # Percentual atingido da meta do mês corrente:
 perc_meta_mes = (total_fat_mes_corrente / meta_mes) * 100
-
 # Mẽdia de faturamento por dia do mês corrente:
 media_fat_dia = fat_por_dia["faturamento"].mean()
-
 # Ticket Mẽdio mês corrente:
 ticket_medio_mes = fat_por_dia['faturamento'].sum() / base_filtro_mes['cupom'].sum()
-
 # Média de cupons por dia do mês corrente:
 media_cupom = base_filtro_mes['cupom'].mean()
-
+# Montante faltante para atingir a meta do mês corrente:
+falta_para_meta = base_filtro_mes['meta'].sum() - total_fat_mes_corrente
+# Projeção de faturamento para o mês corrente:
+proj_fat_mes = total_fat_mes_corrente + (media_fat_dia * dias_restantes)
+# Faturamento diário necessário para alcançar a meta:
+meta_fat_dia = falta_para_meta / dias_restantes
+# Ticket Médio necessário para alcançar a meta:
+meta_ticket_dia = meta_fat_dia / media_cupom
+# Diferença entre Meta de ticket Médio e Ticket realizado:
+diferenca_ticket = meta_ticket_dia - ticket_medio_mes
+# Faturamento por Equipe:
+fat_eq_1 = base_filtro_mes[base_filtro_mes['equipe'] == '1']['faturamento'].sum()
+fat_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['faturamento'].sum()
+# Ticket Médio por Equipe:
+ticket_eq_1 = base_filtro_mes[base_filtro_mes['equipe'] == '1']['ticket_medio'].mean()
+ticket_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['ticket_medio'].mean()
+# Total de comissão acumulada atual:
+comissao_acum = base_comissao_df['rateio'].sum()
+# Mẽdia de Comissão diária:
+comissao_media_dia = base_comissao_df['rateio'].mean()
+# Projeção de Comissão para o mês:
+comissao_proj = comissao_acum + (comissao_media_dia * dias_restantes)
 
 
 
 #------------------------------------------------------------------------------------------------------------
 
-print(media_cupom)
+print(comissao_proj)
 
 
