@@ -2,7 +2,6 @@
 # ANALISE DE DADOS SCADA CAFÉ:
 #------------------------------------------------------------------------------------------------------------
 
-
 #------------------------------------------------------------------------------------------------------------
 # CALCULAR QTD DE DIAS PARA O FIM DO MÊS:
 import matplotlib.pyplot as plt
@@ -24,6 +23,16 @@ else:
 dias_restantes = (ultimo_dia - hoje).days
 
 print(f"Faltam {dias_restantes} dias para terminar o mês.")
+
+
+meses = [
+    "",  # índice 0 vazio
+    "Janeiro", "Fevereiro", "Março", "Abril",
+    "Maio", "Junho", "Julho", "Agosto",
+    "Setembro", "Outubro", "Novembro", "Dezembro"
+]
+
+mes_nome = meses[mes]
 
 
 #------------------------------------------------------------------------------------------------------------
@@ -82,6 +91,7 @@ base_filtro_mes = base_filtro_ano[base_filtro_ano['data'].dt.month == MES_EXIBIC
 
 # Soma total do faturamento do mes corrente:
 total_fat_mes_corrente = base_filtro_mes['faturamento'].sum()
+
 # Exibe a o total de faturamento de todos os meses do ano ordenados:
 fat_por_mes = (
     base_filtro_ano
@@ -100,7 +110,7 @@ fat_por_dia
 )
 
 # Média de faturamento por dia da semana (ano corrente):
-media_dia_semana = (
+media_fat_dia_semana = (
     base_filtro_ano
     .groupby(['dia_semana'])['faturamento']
     .mean()
@@ -143,9 +153,116 @@ comissao_media_dia = base_comissao_df['rateio'].mean()
 comissao_proj = comissao_acum + (comissao_media_dia * dias_restantes)
 
 
+#------------------------------------------------------------------------------------------------------------
+# MENU DE OPÇÕES:
+import os
+import time
+
+def aguardar_comando():
+    input("\nPressione ENTER para voltar ao menu...")
+
+
+while True:
+    os.system("cls" if os.name == "nt" else "clear")
+    print("DADOS SCADA CAFE - CINEMA")
+    print("-----------------------------------")
+    print("1 Faturamento por Mês")
+    print("2 Faturamento por Dia")
+    print("3 Média Fat por Dia da Semana")
+    print("4 Top 10 venda Produtos")
+    print("5 Resumo Resultado Faturamento")
+    print("6 Projeções e Recuperação Meta")
+    print("7 Performance Venda por Equipe")
+    print("8 Projeção Comissão")
+    print("9 Perdas por Mês")
+    print("10 Perdas Mês Corrente")
+    print("11 GRÁFICO - Dados Mês Atual")
+    print("12 GRÁFICO - Evolução Meses")
+    print("13 GRÁFICO - Impressão para Mural")
+    print("14 Enviar Relatório por Email")
+    print("'x' para Sair")
+    escolha = input("Escolha uma opção: ")
+    
+    if escolha == "1":
+        print("\n" + "-" * 50)
+        print(" FATURAMENTO POR MÊS:")
+        print(fat_por_mes)
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "2":
+        print("\n" + "-" * 50)
+        print(" FATURAMENTO POR DIA:")
+        print(fat_por_dia)
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "3":
+        print("\n" + "-" * 50)
+        print(" MÉDIAS POR DIA DA SEMANA:")
+        print(media_fat_dia_semana)
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "4":
+        print("\n" + "-" * 50)
+        print("- RANKING PRODUTOS MAIS VENDIDOS:")
+        print(' EM CONSTRUÇÃO')
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "5":
+        print("\n" + "-" * 50)
+        print(f'- DADOS FATURAMENTO - {mes_nome}:')
+        print(f' Meta Mês: R$ {meta_mes:,.2f}')
+        print(f' Faturamento atual: R$ {total_fat_mes_corrente:,.2f}')
+        print(f' % Meta: {total_fat_mes_corrente / meta_mes:.0%}')
+        print(f' Faturamento Médio Dia: R$ {media_fat_dia:,.2f}')
+        print(f' Ticket Médio Dia: R$ {ticket_medio_mes:,.2f}')
+        print(f' Média Cupons Dia: {media_cupom:.0f}')
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "6":
+        print("\n" + "-" * 50)
+        print('- PROJEÇÕES E RECUPERAÇÃO META:')
+        print(f' Ainda faltam R$ {falta_para_meta:,.2f} para atingirmos a  meta do mês.')
+        print(f' Estamos projetando R$ {proj_fat_mes:,.2f} de faturamento no mês.')
+        print(f' Precisamos de R$ {meta_ticket_dia:,.0f} por mesa ou R$ {meta_fat_dia:,.0f} por dia para alcançarmos a meta do mês.')
+        print(f' Isso representa R$ {meta_ticket_dia - ticket_medio_mes:,.0f} a mais por mesa mediante aos R$ {ticket_medio_mes:,.0f} realizado atualmente.')
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "7":
+        print("\n" + "-" * 50)
+        print('- RESULTADO POR EQUIPE:')
+        print(f' Faturamento Equipe 01: R$ {fat_eq_1:,.0f}')
+        print(f' Faturamento Equipe 02: R$ {fat_eq_2:,.0f}')
+        print(f' Ticket Médio Equipe 01: R$ {ticket_eq_1:,.0f}')
+        print(f' Ticket Médio Equipe 02: R$ {ticket_eq_2:,.0f}')
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "8":
+        print("\n" + "-" * 50)
+        print("- PROJEÇÃO COMISSÃO:")
+        print(f' Comissão atual: R$ {comissao_acum:,.2f}')
+        print(f' Média diária: R$ {comissao_media_dia:,.2f}')
+        print(f" Projeção comissão: R$ {comissao_proj:,.2f}")
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "x":
+        break
+    else:
+        print(" Opção inválida")
+        time.sleep(1)
+
+
+
+
 
 #------------------------------------------------------------------------------------------------------------
 
-print(comissao_proj)
 
 
