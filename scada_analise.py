@@ -49,6 +49,10 @@ conexao = sqlite3.connect("faturamento_scada.db")
 base_comissao_df = pd.read_sql("SELECT * FROM comissao", conexao)
 conexao.close()
 
+conexao = sqlite3.connect("faturamento_scada.db")
+base_perdas_df = pd.read_sql("SELECT * FROM perdas", conexao)
+conexao.close()
+
 #------------------------------------------------------------------------------------------------------------
 # TRATAMENTO DE DADOS:
 # Alterar formato de colunas:
@@ -152,6 +156,37 @@ comissao_media_dia = base_comissao_df['rateio'].mean()
 # Projeção de Comissão para o mês:
 comissao_proj = comissao_acum + (comissao_media_dia * dias_restantes)
 
+# Variaveis da base de perdas:
+base_perdas_df["data"] = pd.to_datetime(
+    base_perdas_df["data"],
+    #format="%Y/%m/%d"
+)
+
+# Formatando a coluna 'qtd' para que seja possível gerar calculos:
+base_perdas_df['qtd'] = (
+    base_perdas_df['qtd']
+    .str.replace(',', '.', regex=False)
+    .str.extract(r'(\d+\.?\d*)')[0]
+    .astype(float)
+)
+
+# Filtrando a base de perdas:
+perdas_motivo_mes = base_perdas_df
+perdas_motivo_mes = perdas_motivo_mes[perdas_motivo_mes["data"].dt.month == MES_EXIBICAO]
+perdas_motivo_filtrado = perdas_motivo_mes.groupby("motivo")[["item"]].count().reset_index()
+
+# Por ano:
+perdas_motivo_ano = base_perdas_df
+perdas_motivo_ano = perdas_motivo_ano[perdas_motivo_ano["data"].dt.year == ANO_EXIBICAO]
+perdas_motivo_filtrado2 = perdas_motivo_ano.groupby("motivo")[["item"]].count().reset_index()
+
+#perdas_motivo = perdas_motivo[perdas_motivo["Data da perda"].dt.month == MES_EXIBICAO]
+# Ordenar por quantidade de perdas:
+perdas_motivo_filtrado = perdas_motivo_filtrado.sort_values("item", ascending=False).reset_index(drop=True)
+perdas_motivo_filtrado2 = perdas_motivo_filtrado2.sort_values("item", ascending=False).reset_index(drop=True)
+# Somatório total do número de ocorrências de perdas:
+total_perdas_mes = perdas_motivo_filtrado["item"].sum()
+
 
 #------------------------------------------------------------------------------------------------------------
 # MENU DE OPÇÕES:
@@ -252,11 +287,310 @@ while True:
         print("\n" + "-" * 50)
         aguardar_comando()
 
+    elif escolha == "9":
+        print("\n" + "-" * 50)
+        print("- PERDAS POR MÊS:")
+        print(' EM CONSTRUÇÃO')
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "10":
+        print("\n" + "-" * 50)
+        print("- PERDAS MÊS CORRENTE:")
+        print(' EM CONSTRUÇÃO')
+        print("\n" + "-" * 50)
+        print("- PERDAS POR MOTIVO:")
+        print(' EM CONSTRUÇÃO')
+        print( "Total: ")
+        print("\n" + "-" * 50)
+        aguardar_comando()
+
+    elif escolha == "11":
+        # Definir ciclo de cores personalizado usando a paleta 'tab10'
+        cores = plt.get_cmap('tab10').colors
+        ciclo_cores = cycler('color', cores)
+        plt.rc('axes', prop_cycle=ciclo_cores)
+
+        # === Ordem dos meses ===
+        ordem_meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+
+        # Ordem meses em inglês:
+        ordem_meses_ingles = ["January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"]
+        
+        # DASHBOARD: Mês Corrente:
+        #--------------------------
+        # Criação de Mosaico:
+        mosaico = "AB;CD" # Definição do mosaico onde serão alocados os gráficos
+        fig = plt.figure(figsize=(14, 10)) # Criação da figura dos gráficos
+        espacamento = {'wspace': 0.12, 'hspace': 0.3} # Variável para definição de espaçamentos
+        axs = fig.subplot_mosaic(mosaico, gridspec_kw=espacamento) # Criação do sistema de eixos
+
+        # GRAFICO A:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # FATURAMENTO POR DIA:
+        # Agrupar por dia e somar o Faturamento
+        # Nota: Como já filtramos por mês, o 'Dia' aqui será o dia do mês (1, 2, 3...)
+        dados_diarios_mes = base_filtro_mes.groupby(base_filtro_mes['data'].dt.day)['faturamento'].sum().reset_index()
+
+        # NOVIDADE CRUCIAL: FILTRAR APENAS DIAS COM FATURAMENTO MAIOR QUE ZERO
+        dados_diarios_mes = dados_diarios_mes[
+            dados_diarios_mes['faturamento'] > 0
+        ].reset_index(drop=True) # O reset_index é opcional, mas boa prática após um filtro
+
+        # --- NOVIDADE: 1.4 Calcular a Média ---
+        media_diaria = dados_diarios_mes['faturamento'].mean()
+
+        # .plot() é o comando para gráficos de linha
+        axs["A"].plot(
+            dados_diarios_mes['data'],
+            dados_diarios_mes['faturamento'],
+            marker='o',          # Adiciona um marcador para cada dia
+            linestyle='-',       # Linha contínua
+            linewidth=2,
+            label="Faturamento"
+        )
+
+        # --- NOVIDADE: Linha de Média ---
+        axs["A"].axhline(
+            y=media_diaria,
+            color='red',
+            linestyle='--', # Linha tracejada
+            alpha=0.3,
+            linewidth=2,
+            label=f"Média Diária ({media_diaria:,.0f} R$)" # Adicionar label da média na legenda com o valor formatado
+        )
+
+        # --- NOVIDADE: Valores sobre os Pontos (Rótulos de Dados) ---
+        for dia, faturamento in zip(dados_diarios_mes['data'], dados_diarios_mes['faturamento']):
+            axs["A"].text(
+                dia, 
+                faturamento + 100,  # Adiciona um pequeno offset (+100) para ficar acima do ponto
+                f"{faturamento:,.0f}", # Formata o valor sem casas decimais e com separador de milhar
+                ha='center',        # Alinhamento horizontal: centralizado no ponto
+                va='bottom',        # Alinhamento vertical: acima do ponto
+                fontsize=9,
+                alpha=0.7,
+                color='dimgrey',
+                weight='bold'
+            )
+
+        # --- 3. Personalização e Visualização ---
+        axs["A"].set_title(f'Faturamento Diário', fontsize=14, weight='bold')
+        axs["A"].set_xlabel('Dia do Mês', fontsize=10)
+        axs["A"].set_ylabel('Faturamento (R$)', fontsize=10)
+        axs["A"].tick_params(axis="x", rotation=45, labelsize=8)
+
+
+        # Garantir que todos os dias do mês apareçam no eixo X
+        dias = range(1, len(dados_diarios_mes) + 1)
+        axs["A"].set_xticks(dias)
+
+        axs["A"].legend()
+        axs["A"].grid(True, linestyle='--', alpha=0.4)
+
+        # GRAFICO B:
+        #------------
+        # RELAÇÃO TICKET MÉDIO X NÚMERO DE CUPONS:
+        # VARIÁVEIS TICKET:
+        ticket_medio_mes_corrente = base_filtro_mes.groupby(base_filtro_mes['data'].dt.day)['ticket_medio'].mean().reset_index()
+        # Filtrar faturamento maior que '0':
+        ticket_medio_mes_corrente = ticket_medio_mes_corrente[
+            ticket_medio_mes_corrente['ticket_medio'] > 0
+        ].reset_index(drop=True) # O reset_index é opcional, mas boa prática após um filtro
+        # Linha de Média
+        media_ticket_mes_corrente = ticket_medio_mes_corrente['ticket_medio'].mean()
+
+        # VARIÁVEIS CUPONS: - - - - - - - - - - - - - - - - - - - - - - - - 
+        dados_cupons_mes_corrente = base_filtro_mes.groupby(base_filtro_mes['data'].dt.day)['cupom'].sum().reset_index()
+        # Filtrar cupos maior que '0':
+        dados_cupons_mes_corrente = dados_cupons_mes_corrente[dados_cupons_mes_corrente['cupom'] > 0].reset_index(drop=True)
+        # O reset_index é opcional, mas boa prática após um filtro
+        # Calcular a Média de Cupons
+        media_cupons_mes_corrente = dados_cupons_mes_corrente['cupom'].mean()
+
+        #-----------------------
+
+        # CONSTRUÇÃO DO GRÁFICO COM DOIS EIXOS Y:
+        axs["B"].grid(True, linestyle='--', alpha=0.4)
+
+        # Primeiro eixo Y - Ticket Médio:
+        axs["B"].plot(ticket_medio_mes_corrente['data'], ticket_medio_mes_corrente['ticket_medio'],
+                marker='o', linestyle='-', linewidth=2, label='Ticket Médio Diário')
+        axs["B"].set_ylabel('Ticket Médio (R$)', color='steelblue')
+        axs["B"].set_xlabel('Dia do Mês', fontsize=10)
+        axs["B"].tick_params(axis='y', labelcolor="steelblue")
+        axs["B"].set_title(f'Relação Ticket Médio x Número de Cupons', fontsize=11, weight='bold')
+
+        # Linha de Média Ticket Médio:
+        media_ticket_mes_corrente = ticket_medio_mes_corrente['ticket_medio'].mean()
+        axs["B"].axhline(
+            y=media_ticket_mes_corrente,
+            color='red',
+            linestyle='--', # Linha tracejada
+            alpha=0.3,
+            linewidth=2,
+            label=f"Média Ticket Dia ({media_ticket_mes_corrente:,.0f} R$)" # Adicionar label da média na legenda com o valor formatado
+        )
+        # Valores sobre os Pontos Ticket Médio (Rótulos de Dados):
+        for dia, ticket in zip(ticket_medio_mes_corrente['data'], ticket_medio_mes_corrente['ticket_medio']):
+            axs["B"].text(
+                dia,
+                ticket + 0.1,  # Adiciona um pequeno offset (+5) para ficar acima do ponto
+                f"{ticket:,.2f}", # Formata o valor sem casas decimais e com separador de milhar
+                ha='center',
+                va='bottom',
+                fontsize=9,
+                color='dimgrey',
+                weight='bold'
+            )
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        ax2 = axs["B"].twinx()  # Criar um segundo eixo Y compartilhando o eixo X
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+        # Segundo eixo Y - Cupons por Dia:
+        ax2.plot(dados_cupons_mes_corrente['data'], dados_cupons_mes_corrente['cupom'],
+                marker='s', linestyle='-', color='darkred', linewidth=2, alpha=0.15, label=f'Cupons por Dia ({media_cupons_mes_corrente:.0f})')
+        ax2.set_ylabel('Cupons por Dia', color='darkred')
+        ax2.tick_params(axis='y', labelcolor='darkred')
+
+        #Ajuste de grid do gráfico de linhas para Cupons - AX2:
+        #ax2.grid(axis='y', linestyle='--', alpha=0.4)
+        ax2.grid(False)
+
+        # Garantir que todos os dias do mês apareçam no eixo X
+        dias = range(1, len(dados_diarios_mes) + 1)
+        axs["B"].set_xticks(dias)
+        axs["B"].set_xticklabels(dados_cupons_mes_corrente["data"], rotation=45, fontsize=8)
+
+        # Adicionar legendas ancorando a posição fixa (x, y) / bbox_transform para posicionar em relação a área do gráfico
+        axs["B"].legend(bbox_transform=ax2.transAxes)
+        ax2.legend()
+
+
+        # GRAFICO C:
+        #-------------
+        # PERDAS POR MÊS:
+        perdas_mes = axs["C"].bar(base_perdas_df['data'], base_perdas_df['qtd'], color='red', alpha=0.3, label='Perdas')
+        media_perdas_mes = base_perdas_df['qtd'].mean()
+
+        base_perdas_df["data"] = pd.Categorical(base_perdas_df["data"],
+                                            categories=ordem_meses,
+                                            ordered=True)
+        base_perdas_df = base_perdas_df.sort_values("data")
+
+        # --- NOVIDADE: Linha de Média ---
+        axs["C"].axhline(
+            y=media_perdas_mes,
+            #color='salmon',
+            linestyle='--', # Linha tracejada
+            alpha=0.5,
+            linewidth=2,
+            label=f"Média Mês ({media_perdas_mes:,.0f})" # Adicionar label da média na legenda com o valor formatado
+        )
+
+        # === Personalização ===
+        axs["C"].set_title('Perdas Por Mês', fontsize=14, weight='bold')
+        #axs["D"].set_xlabel("Mês")
+        axs["C"].set_ylabel("Quantidade")
+        axs["C"].tick_params(axis="x", rotation=45, labelsize=8)
+        axs["C"].grid(False)
+        axs["C"].grid(axis="y", linestyle="--", alpha=0.4)
+        axs["C"].legend()
+
+        # === Valores sobre as barras ===
+        axs["C"].bar_label(
+            perdas_mes, # Variável que recebeu a instrução do gráfico
+            label=base_perdas_df["qtd"], # Informação a ser exibida em cima de cada barra
+            padding=3, # Posição do texto em relação à barra
+            fontsize=9, # Tamanho da fonte
+            fontweight='bold', # Fonte em negrito
+            color="dimgrey" # Cor do texto
+            )
+
+        # Muda a cor da barra para valores abaixo da média:
+        for i, barra in enumerate(perdas_mes):
+            if base_perdas_df["qtd"].iloc[i] < media_perdas_mes:
+                barra.set_color('green')
+
+        # Destacar área no gráfico (exemplo: período de redução de perdas)
+        #plt.axvspan(4.5, 9.5, color='lightgreen', alpha=0.3) 
+        #plt.text(5.5, 70, 'Período de Redução de Perdas', fontsize=10, color='darkgreen')
+
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # GRAFICO D:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # PERDAS POR MOTIVO:
+        perdas_cat = axs["D"].pie(
+            perdas_motivo_filtrado['item'],
+            labels=perdas_motivo_filtrado['motivo'],
+            autopct='%1.1f%%',
+            startangle=140,
+            textprops={'fontsize': 10, 'weight': 'bold', 'color': 'black'}
+        )
+
+        # === Personalização ===
+        axs["D"].set_title(f'Perdas por Categoria', fontsize=14, weight='bold')
+
+
+        # AJUSTES FIGURA:
+        #-----------------
+        fig.suptitle(f"Dashboard Scada Café - Loja Cinema - {mes_nome} {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
+
+        # Gerar arquivo .PNG do gráfico:
+        plt.savefig("dashboard_Mes_Corrente_cinema.png", dpi=300, bbox_inches="tight")
+
+        plt.show()
+        aguardar_comando()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     elif escolha == "x":
         break
     else:
         print(" Opção inválida")
         time.sleep(1)
+
+
 
 
 
