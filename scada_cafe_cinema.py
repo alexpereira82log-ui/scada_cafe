@@ -640,7 +640,7 @@ while True:
 
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # # AJUSTES FIGURA:
+        # AJUSTES FIGURA:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         fig.suptitle(f"Dashboard Scada Café - Loja Cinema - {nome_do_mes_corrente} {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
 
