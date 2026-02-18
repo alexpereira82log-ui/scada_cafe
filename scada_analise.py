@@ -184,8 +184,18 @@ perdas_motivo_filtrado2 = perdas_motivo_ano.groupby("motivo")[["item"]].count().
 # Ordenar por quantidade de perdas:
 perdas_motivo_filtrado = perdas_motivo_filtrado.sort_values("item", ascending=False).reset_index(drop=True)
 perdas_motivo_filtrado2 = perdas_motivo_filtrado2.sort_values("item", ascending=False).reset_index(drop=True)
+# Relação de perdas do mês:
+relacao_perdas_mes = base_perdas_df[base_perdas_df["data"].dt.month == MES_EXIBICAO]
 # Somatório total do número de ocorrências de perdas:
 total_perdas_mes = perdas_motivo_filtrado["item"].sum()
+#total_perdas_ano = perdas_motivo_ano.groupby('data')[['item']].count().reset_index()
+total_perdas_ano = (
+    perdas_motivo_ano
+    .groupby(perdas_motivo_ano['data'].dt.to_period('M'))['item']
+    .count()
+    .reset_index()
+)
+
 
 
 #------------------------------------------------------------------------------------------------------------
@@ -290,18 +300,18 @@ while True:
     elif escolha == "9":
         print("\n" + "-" * 50)
         print("- PERDAS POR MÊS:")
-        print(' EM CONSTRUÇÃO')
+        print(total_perdas_ano)
         print("\n" + "-" * 50)
         aguardar_comando()
 
     elif escolha == "10":
         print("\n" + "-" * 50)
         print("- PERDAS MÊS CORRENTE:")
-        print(' EM CONSTRUÇÃO')
+        print(relacao_perdas_mes)
         print("\n" + "-" * 50)
         print("- PERDAS POR MOTIVO:")
-        print(' EM CONSTRUÇÃO')
-        print( "Total: ")
+        print(perdas_motivo_filtrado)
+        print(f"Total: {total_perdas_mes}")
         print("\n" + "-" * 50)
         aguardar_comando()
 
@@ -328,7 +338,7 @@ while True:
         axs = fig.subplot_mosaic(mosaico, gridspec_kw=espacamento) # Criação do sistema de eixos
 
         # GRAFICO A:
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #----------------
         # FATURAMENTO POR DIA:
         # Agrupar por dia e somar o Faturamento
         # Nota: Como já filtramos por mês, o 'Dia' aqui será o dia do mês (1, 2, 3...)
@@ -410,8 +420,6 @@ while True:
         # Calcular a Média de Cupons
         media_cupons_mes_corrente = dados_cupons_mes_corrente['cupom'].mean()
 
-        #-----------------------
-
         # CONSTRUÇÃO DO GRÁFICO COM DOIS EIXOS Y:
         axs["B"].grid(True, linestyle='--', alpha=0.4)
 
@@ -473,13 +481,40 @@ while True:
         # GRAFICO C:
         #-------------
         # PERDAS POR MÊS:
-        perdas_mes = axs["C"].bar(base_perdas_df['data'], base_perdas_df['qtd'], color='red', alpha=0.3, label='Perdas')
-        media_perdas_mes = base_perdas_df['qtd'].mean()
+        # Agrupar por mês:
+        perdas_por_mes = (
+            base_perdas_df
+            .groupby(base_perdas_df['data'].dt.month)['qtd']
+            .count()
+            .reindex(range(1,13), fill_value=0)
+            .reset_index()
+        )
 
-        base_perdas_df["data"] = pd.Categorical(base_perdas_df["data"],
-                                            categories=ordem_meses,
-                                            ordered=True)
-        base_perdas_df = base_perdas_df.sort_values("data")
+        # Criar nome do mês a partir do número (mantendo coluna 'data')
+        perdas_por_mes['mes'] = perdas_por_mes['data'].map(
+            dict(zip(range(1,13), ordem_meses))
+        )
+
+        # Ordenar corretamente:
+        perdas_por_mes['mes'] = pd.Categorical(
+            perdas_por_mes['mes'],
+            categories=ordem_meses,
+            ordered=True
+        )
+        perdas_por_mes = perdas_por_mes.sort_values('mes')
+
+        # Filtrar meses com perdas > 0
+        perdas_por_mes = perdas_por_mes.loc[perdas_por_mes['qtd'] > 0].copy()
+
+        media_perdas_mes = perdas_por_mes['qtd'].mean()
+
+        perdas_mes = axs["C"].bar(
+            perdas_por_mes['mes'],
+            perdas_por_mes['qtd'],
+            color='red',
+            alpha=0.3,
+            label='Perdas'
+        )
 
         # --- NOVIDADE: Linha de Média ---
         axs["C"].axhline(
@@ -493,7 +528,7 @@ while True:
 
         # === Personalização ===
         axs["C"].set_title('Perdas Por Mês', fontsize=14, weight='bold')
-        #axs["D"].set_xlabel("Mês")
+        #axs["C"].set_xlabel("Mês")
         axs["C"].set_ylabel("Quantidade")
         axs["C"].tick_params(axis="x", rotation=45, labelsize=8)
         axs["C"].grid(False)
@@ -503,7 +538,7 @@ while True:
         # === Valores sobre as barras ===
         axs["C"].bar_label(
             perdas_mes, # Variável que recebeu a instrução do gráfico
-            label=base_perdas_df["qtd"], # Informação a ser exibida em cima de cada barra
+            labels=perdas_por_mes["qtd"], # Informação a ser exibida em cima de cada barra
             padding=3, # Posição do texto em relação à barra
             fontsize=9, # Tamanho da fonte
             fontweight='bold', # Fonte em negrito
@@ -512,17 +547,12 @@ while True:
 
         # Muda a cor da barra para valores abaixo da média:
         for i, barra in enumerate(perdas_mes):
-            if base_perdas_df["qtd"].iloc[i] < media_perdas_mes:
+            if perdas_por_mes["qtd"].iloc[i] < media_perdas_mes:
                 barra.set_color('green')
 
-        # Destacar área no gráfico (exemplo: período de redução de perdas)
-        #plt.axvspan(4.5, 9.5, color='lightgreen', alpha=0.3) 
-        #plt.text(5.5, 70, 'Período de Redução de Perdas', fontsize=10, color='darkgreen')
 
-
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # GRAFICO D:
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #-----------------
         # PERDAS POR MOTIVO:
         perdas_cat = axs["D"].pie(
             perdas_motivo_filtrado['item'],
