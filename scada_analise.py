@@ -99,10 +99,10 @@ total_fat_mes_corrente = base_filtro_mes['faturamento'].sum()
 # Exibe a o total de faturamento de todos os meses do ano ordenados:
 fat_por_mes = (
     base_filtro_ano
-    .groupby(["ano", "mes", "mes_nome"])["faturamento"]
+    .groupby(['mes', "mes_nome"])[["faturamento", 'meta']]
     .sum()
     .reset_index()
-    .sort_values(["ano", "mes"])
+    .sort_values(["mes"])
 )
 
 # Exibe o faturamento do mes corrente dia a dia:
@@ -116,7 +116,7 @@ fat_por_dia
 # Média de faturamento por dia da semana (ano corrente):
 media_fat_dia_semana = (
     base_filtro_ano
-    .groupby(['dia_semana'])['faturamento']
+    .groupby('dia_semana')[['faturamento', 'ticket_medio', 'cupom']]
     .mean()
     .reindex(ordem_dias_semana)
     .round(0)
@@ -563,7 +563,7 @@ while True:
         )
 
         # === Personalização ===
-        axs["D"].set_title(f'Perdas por Categoria', fontsize=14, weight='bold')
+        axs["D"].set_title(f'Perdas por Categoria (Mês)', fontsize=14, weight='bold')
 
 
         # AJUSTES FIGURA:
@@ -576,55 +576,521 @@ while True:
         plt.show()
         aguardar_comando()
 
+    elif escolha == "12":
+        # ==============================
+        # CONFIGURAÇÕES INICIAIS
+        # ==============================
+
+        cores = plt.get_cmap('tab10').colors
+        ciclo_cores = cycler('color', cores)
+        plt.rc('axes', prop_cycle=ciclo_cores)
+
+        ordem_meses = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ]
+
+        mosaico_mes = "AA;BC"
+        fig = plt.figure(figsize=(14, 10))
+        espacamento = {'wspace': 0.15, 'hspace': 0.3}
+        axs = fig.subplot_mosaic(mosaico_mes, gridspec_kw=espacamento)
+
+        # ==============================
+        # GRAFICO A - FATURAMENTO X META
+        # ==============================
+
+        faturamento_por_mes = (
+            base_filtro_ano
+            .groupby(base_filtro_ano["data"].dt.month)
+            .agg({
+                "faturamento": "sum",
+                "meta": "sum"
+            })
+            .reset_index()
+        )
+
+        faturamento_por_mes.rename(columns={"data": "mes"}, inplace=True)
+
+        faturamento_por_mes["mes_nome"] = faturamento_por_mes["mes"].apply(
+            lambda x: ordem_meses[x - 1]
+        )
+
+        faturamento_por_mes = faturamento_por_mes.sort_values("mes")
+
+        # Média do faturamento
+        media_faturamento_mes = faturamento_por_mes["faturamento"].mean()
+
+        barras_meta = axs["A"].bar(
+            faturamento_por_mes["mes_nome"],
+            faturamento_por_mes["meta"],
+            label="Meta",
+            color="darkorange",
+            alpha=0.4
+        )
+
+        barras_faturamento = axs["A"].bar(
+            faturamento_por_mes["mes_nome"],
+            faturamento_por_mes["faturamento"],
+            label="Faturamento",
+            color="steelblue"
+        )
+
+        axs["A"].bar_label(barras_meta, fmt="{:,.0f}", padding=3, fontsize=8)
+        axs["A"].bar_label(barras_faturamento, fmt="{:,.0f}", padding=3, fontsize=8, fontweight='bold')
+
+        axs["A"].axhline(
+            y=media_faturamento_mes,
+            linestyle="--",
+            alpha=0.4,
+            linewidth=2,
+            label=f"Média ({media_faturamento_mes:,.0f})"
+        )
+
+        axs["A"].set_title(f"Faturamento x Meta Mensal {ANO_EXIBICAO}", fontsize=14, weight='bold')
+        axs["A"].set_ylabel("Valores (R$)")
+        axs["A"].tick_params(axis="x", rotation=45, labelsize=8)
+        axs["A"].legend(loc="lower left")
+        axs["A"].grid(axis="y", linestyle="--", alpha=0.6)
+
+        # ==============================
+        # GRAFICO B - MÉDIA FATURAMENTO
+        # ==============================
+
+        faturamento_por_dia = (
+            base_filtro_ano
+            .groupby(base_filtro_ano['data'].dt.month)['faturamento']
+            .mean()
+            .reset_index()
+        )
+
+        faturamento_por_dia.rename(columns={"data": "mes"}, inplace=True)
+
+        axs["B"].plot(
+            faturamento_por_dia["mes"],
+            faturamento_por_dia["faturamento"],
+            marker='o',
+            linewidth=2,
+            label="Fat Médio Dia"
+        )
+
+        for mes, valor in zip(faturamento_por_dia["mes"], faturamento_por_dia["faturamento"]):
+            axs["B"].text(
+                mes,
+                valor,
+                f"{valor:,.0f}",
+                ha='center',
+                va='bottom',
+                fontsize=9,
+                alpha=0.7,
+                color='dimgrey',
+                weight='bold'
+            )
+
+        axs["B"].set_title(f'Faturamento Médio - {ANO_EXIBICAO}', fontsize=14, weight='bold')
+        axs["B"].set_xlabel('Mês')
+        axs["B"].set_ylabel('Média Faturamento (R$)')
+        axs["B"].set_xticks(faturamento_por_dia["mes"])
+        axs["B"].grid(True, linestyle='--', alpha=0.4)
+
+        # ==============================
+        # GRAFICO C - TICKET X CUPONS
+        # ==============================
+
+        ticket_medio_mes = (
+            base_filtro_ano
+            .groupby(base_filtro_ano['data'].dt.month)['ticket_medio']
+            .mean()
+            .reset_index()
+        )
+
+        ticket_medio_mes.rename(columns={"data": "mes"}, inplace=True)
+
+        dados_cupons_mes = (
+            base_filtro_ano
+            .groupby(base_filtro_ano['data'].dt.month)['cupom']
+            .mean()
+            .reset_index()
+        )
+
+        dados_cupons_mes.rename(columns={"data": "mes"}, inplace=True)
+
+        axs["C"].plot(
+            ticket_medio_mes["mes"],
+            ticket_medio_mes["ticket_medio"],
+            marker='o',
+            linewidth=2,
+            label='Ticket Médio'
+        )
+
+        axs["C"].set_ylabel('Ticket Médio (R$)', color='steelblue', fontsize=10)
+        axs["C"].set_xlabel('Mês')
+        axs["C"].grid(True, linestyle='--', alpha=0.4)
+
+        for mes, ticket in zip(ticket_medio_mes["mes"], ticket_medio_mes["ticket_medio"]):
+            axs["C"].text(
+                mes,
+                ticket,
+                f"{ticket:,.2f}",
+                ha='center',
+                va='bottom',
+                fontsize=9,
+                color='dimgrey',
+                weight='bold'
+            )
+
+        ax2 = axs["C"].twinx()
+
+        ax2.plot(
+            dados_cupons_mes["mes"],
+            dados_cupons_mes["cupom"],
+            marker='s',
+            linestyle='-',
+            linewidth=2,
+            color='darkred',
+            alpha=0.15,
+            label='Cupons'
+        )
+
+        ax2.set_ylabel('Cupons por Dia', color='darkred', fontsize=10)
+        ax2.tick_params(axis='y', labelcolor='darkred')
+
+        axs["C"].set_title(f'Relação Ticket Médio x Cupons - {ANO_EXIBICAO}', fontsize=12, weight='bold')
+
+        # ==============================
+        # AJUSTES FINAIS
+        # ==============================
+
+        fig.suptitle(
+            f"Dashboard Mês a Mês - Scada Café - Loja Cinema - {ANO_EXIBICAO}",
+            fontsize=16,
+            fontweight='bold',
+            color='darkgrey'
+        )
+
+        plt.savefig("dashboard_Mes_a_Mes_cinema.png", dpi=300, bbox_inches="tight")
+        plt.show()
+
+        aguardar_comando()
+
+    elif escolha == '13':
+
+        # ==============================
+        # CONFIGURAÇÕES INICIAIS
+        # ==============================
+
+        cores = plt.get_cmap('tab10').colors
+        ciclo_cores = cycler('color', cores)
+        plt.rc('axes', prop_cycle=ciclo_cores)
+
+        ordem_meses = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ]
+
+        mosaico_mes = "AAA;BBC"
+        fig = plt.figure(figsize=(14, 10))
+        espacamento = {'wspace': 0.15, 'hspace': 0.3}
+        axs = fig.subplot_mosaic(mosaico_mes, gridspec_kw=espacamento)
+
+        # ==============================
+        # GRAFICO A - FATURAMENTO X META
+        # ==============================
+
+        faturamento_por_mes = (
+            base_filtro_ano
+            .groupby(base_filtro_ano["data"].dt.month)
+            .agg({
+                "faturamento": "sum",
+                "meta": "sum"
+            })
+            .reset_index()
+        )
+
+        faturamento_por_mes.rename(columns={"data": "mes"}, inplace=True)
+
+        faturamento_por_mes["mes_nome"] = faturamento_por_mes["mes"].apply(
+            lambda x: ordem_meses[x - 1]
+        )
+
+        faturamento_por_mes = faturamento_por_mes.sort_values("mes")
+
+        # Calcular percentual atingido da meta
+        faturamento_por_mes["Percentual"] = faturamento_por_mes["faturamento"] / faturamento_por_mes["meta"]
+
+        # Média do faturamento
+        media_faturamento_mes = faturamento_por_mes["faturamento"].mean()
+
+        barras_meta = axs["A"].bar(
+            faturamento_por_mes["mes_nome"],
+            faturamento_por_mes["meta"],
+            label="Meta",
+            color="darkorange",
+            alpha=0.4
+        )
+
+        barras_faturamento = axs["A"].bar(
+            faturamento_por_mes["mes_nome"],
+            faturamento_por_mes["faturamento"],
+            label="Faturamento",
+            color="steelblue"
+        )
+
+        # Inserir rótulos com percentual sobre as barras de faturamento:
+        axs["A"].bar_label(
+            barras_faturamento,
+            labels=faturamento_por_mes["Percentual"].apply(lambda x: f"{x:.0%}"),
+            padding=3,
+            fontsize=8,
+            fontweight='bold'
+        )
+
+        axs["A"].axhline(
+            y=media_faturamento_mes,
+            linestyle="--",
+            alpha=0.4,
+            linewidth=2,
+            label=f"Média ({media_faturamento_mes:,.0f})"
+        )
+
+        axs["A"].set_title(f"Faturamento x Meta Mensal {ANO_EXIBICAO}", fontsize=14, weight='bold')
+        axs["A"].set_ylabel("Valores (R$)")
+        axs["A"].tick_params(axis="x", rotation=45, labelsize=8)
+        axs["A"].legend(loc="lower left")
+        axs["A"].grid(axis="y", linestyle="--", alpha=0.6)
+
+        # =========================================================
+        # GRÁFICO B — PERDAS POR MÊS
+        # =========================================================
+        
+        # PERDAS POR MÊS:
+        # Agrupar por mês:
+        perdas_por_mes = (
+            base_perdas_df
+            .groupby(base_perdas_df['data'].dt.month)['qtd']
+            .count()
+            .reindex(range(1,13), fill_value=0)
+            .reset_index()
+        )
+
+        # Criar nome do mês a partir do número (mantendo coluna 'data')
+        perdas_por_mes['mes'] = perdas_por_mes['data'].map(
+            dict(zip(range(1,13), ordem_meses))
+        )
+
+        # Ordenar corretamente:
+        perdas_por_mes['mes'] = pd.Categorical(
+            perdas_por_mes['mes'],
+            categories=ordem_meses,
+            ordered=True
+        )
+        perdas_por_mes = perdas_por_mes.sort_values('mes')
+
+        # Filtrar meses com perdas > 0
+        perdas_por_mes = perdas_por_mes.loc[perdas_por_mes['qtd'] > 0].copy()
+
+        media_perdas_mes = perdas_por_mes['qtd'].mean()
+
+        perdas_mes = axs["B"].bar(
+            perdas_por_mes['mes'],
+            perdas_por_mes['qtd'],
+            color='red',
+            alpha=0.3,
+            label='Perdas'
+        )
+
+        # --- NOVIDADE: Linha de Média ---
+        axs["B"].axhline(
+            y=media_perdas_mes,
+            #color='salmon',
+            linestyle='--', # Linha tracejada
+            alpha=0.5,
+            linewidth=2,
+            label=f"Média Mês ({media_perdas_mes:,.0f})" # Adicionar label da média na legenda com o valor formatado
+        )
+
+        # === Personalização ===
+        axs["B"].set_title('Perdas Por Mês', fontsize=14, weight='bold')
+        #axs["C"].set_xlabel("Mês")
+        axs["B"].set_ylabel("Quantidade")
+        axs["B"].tick_params(axis="x", rotation=45, labelsize=8)
+        axs["B"].grid(False)
+        axs["B"].grid(axis="y", linestyle="--", alpha=0.4)
+        axs["B"].legend()
+
+        # === Valores sobre as barras ===
+        axs["B"].bar_label(
+            perdas_mes, # Variável que recebeu a instrução do gráfico
+            labels=perdas_por_mes["qtd"], # Informação a ser exibida em cima de cada barra
+            padding=3, # Posição do texto em relação à barra
+            fontsize=9, # Tamanho da fonte
+            fontweight='bold', # Fonte em negrito
+            color="dimgrey" # Cor do texto
+            )
+
+        # Muda a cor da barra para valores abaixo da média:
+        for i, barra in enumerate(perdas_mes):
+            if perdas_por_mes["qtd"].iloc[i] < media_perdas_mes:
+                barra.set_color('green')
 
 
+        # =========================================================
+        # GRÁFICO C — PERDAS POR MOTIVO
+        # =========================================================
+        # PERDAS POR MOTIVO:
+        perdas_cat = axs["C"].pie(
+            perdas_motivo_filtrado2['item'],
+            labels=perdas_motivo_filtrado2['motivo'],
+            autopct='%1.1f%%',
+            startangle=140,
+            textprops={'fontsize': 10, 'weight': 'bold', 'color': 'black'}
+        )
+
+        # === Personalização ===
+        axs["C"].set_title(f'Perdas por Categoria (Ano)', fontsize=14, weight='bold')
 
 
+        # =========================================================
+        # AJUSTES FINAIS
+        # =========================================================
+        fig.suptitle(f"Dashboard - Scada Café - Loja Cinema - {ANO_EXIBICAO}", fontsize=16, fontweight='bold', color='darkgrey')
 
+        # Gerar arquivo .PNG do gráfico:
+        plt.savefig("dashboard_Mes_Mural_cinema.png", dpi=300, bbox_inches="tight")
 
+        plt.show()
+        aguardar_comando()
 
+    elif escolha == '14':
 
+        #faturamento_por_mes = base_filtro_ano.groupby("data")[["faturamento", "meta"]].sum().reset_index()
+        #faturamento_por_mes["Percentual"] = faturamento_por_mes["faturamento"] / faturamento_por_mes["meta"]
 
+        #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        # ENVIO DE RELATÓRIO POR EMAIL:
+        #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        # Importação de bibliotecas necessárias:
+        import smtplib # Biblioteca para envio de emails
+        import email.message # Biblioteca para manipulação de mensagens de email
+        from senha_email import senha_app # Importa a senha do email de um arquivo externo
+        from email.mime.multipart import MIMEMultipart # Biblioteca para manipulação de emails com múltiplas partes
+        from email.mime.text import MIMEText # Biblioteca para manipulação de texto em emails
+        from email.mime.application import MIMEApplication # Biblioteca para manipulação de anexos em emails
+        import os # Biblioteca para manipulação de arquivos e diretórios
 
+        # Formatação de variáveis para email:
+        def dataframe_para_html(df):
+            return df.to_html(
+                index=False,
+                border=0,
+                justify="center",
+                classes="tabela-relatorio"
+            )
 
+        # Criação de função para enviar email:
+        def enviar_email():
+            msg = MIMEMultipart()
+            msg["Subject"] = f"Relatório Scada Café - Loja Cinema - {ANO_EXIBICAO}"
+            msg["From"] = "alex.pereira82log@gmail.com"
+            msg["To"] = "alex.barista@icloud.com"
+            
+            # Link da imagem de assinatura hospedada:
+            link_imagem = "https://d3p2amk7tvag7f.cloudfront.net/pdvs/245f27d9196ae3b2c5dcc6dd6f6f1be7f861db7c.png"
+            
+            # Corpo do email em HTML:
+            tabela_mes = dataframe_para_html(fat_por_mes)
+            tabela_dia_semana = dataframe_para_html(media_fat_dia_semana)
 
+            corpo_email = f"""
+            <html>
+            <head>
+            <style>
+                .tabela-relatorio {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-top: 10px;
+                    margin-bottom: 20px;
+                    font-family: Arial, sans-serif;
+                    font-size: 14px;
+                }}
 
+                .tabela-relatorio th {{
+                    background-color: #2F4F4F;
+                    color: #FFFFFF;
+                    padding: 8px;
+                    border: 1px solid #DDDDDD;
+                    text-align: center;
+                }}
 
+                .tabela-relatorio td {{
+                    padding: 8px;
+                    border: 1px solid #DDDDDD;
+                    text-align: center;
+                }}
+            </style>
+            </head>
 
+            <body>
+            <p>Segue relatório de análises e resultados atualizado referente às vendas de Scada Café (Loja Cinema).</p>
+            <p style='margin:0;'><strong>{mes_nome} {ANO_EXIBICAO}</strong></p>
 
+            <p><strong><span style="text-decoration: underline;">RESUMO DADOS FATURAMENTO:</span></strong></p>
+            <p style='margin:0;'>- Meta Mês: <strong>R$ {meta_mes:,.2f}</strong></p>
+            <p style='margin:0;'>- Faturamento Total: <strong>R$ {total_fat_mes_corrente:,.2f}</strong></p>
+            <p style='margin:0;'>- Faturamento Médio Dia: <strong>R$ {media_fat_dia:,.2f}</strong></p>
+            <p style='margin:0;'>- Média Cupons Dia: <strong>{media_cupom:.0f}</strong></p>
+            <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes:,.2f}</strong></p>
+            
+            <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
+            <p>- Ainda faltam <strong>R$ {meta_mes - total_fat_mes_corrente:,.2f}</strong> para atingirmos a  meta do mês.</p>
+            <p> </p>
+            <p>- Estamos projetando <strong>R$ {proj_fat_mes:,.2f}</strong> de faturamento no mês.</p>
+            <p> </p>
+            <p>- Precisamos de <strong>R$ {meta_ticket_dia:,.0f} por mesa ou R$ {meta_fat_dia:,.0f} por dia</strong> para alcançarmos a meta do mês.</p>
+            <p> </p>
 
+            <p><strong><span style="text-decoration: underline;">FATURAMENTO POR MÊS:</span></strong></p>
+            {tabela_mes}
+            
+            <p><strong><span style="text-decoration: underline;">FATURAMENTO POR DIA DA SEMANA:</span></strong></p>
+            {tabela_dia_semana}
 
+            <p style='margin:0;'>Att,<br>Alex Pereira</p>
+                <img src='{link_imagem}' style='max-width:150px; width:100%; height:auto;'>
 
+            </body>
+            </html>
+            """
+            
+            # Anexando o corpo do email em HTML
+            msg.attach(MIMEText(corpo_email, "html"))
 
+            # Anexar arquivos de uma pasta específica:
+            diretorio_atual = os.path.dirname(os.path.abspath(__file__))
 
+            # Lista os arquivos na pasta informada
+            lista_arquivos = os.listdir(diretorio_atual)
+            for nome_arquivo in lista_arquivos:
+                if nome_arquivo.lower().endswith("cinema.png"):
+                    caminho_arquivo = os.path.join(diretorio_atual, nome_arquivo)
+                    with open(caminho_arquivo, "rb") as arquivo:
+                        msg.attach(MIMEApplication(arquivo.read(), Name=nome_arquivo))
 
+            servidor = smtplib.SMTP("smtp.gmail.com", 587)
+            servidor.starttls()
+            # Substitua pela sua senha de aplicativo
+            servidor.login(msg["From"], senha_app)
+            servidor.send_message(msg)
+            servidor.quit()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            # Confirmação envio email:
+            print("Email enviado com sucesso!")
+            
+        enviar_email()
     elif escolha == "x":
-        break
+            break
     else:
-        print(" Opção inválida")
+        print("Opção inválida")
         time.sleep(1)
-
-
-
-
-
-
 
 #------------------------------------------------------------------------------------------------------------
 
