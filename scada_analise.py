@@ -129,8 +129,12 @@ meta_mes = base_filtro_mes['meta'].sum()
 perc_meta_mes = (total_fat_mes_corrente / meta_mes) * 100
 # Mẽdia de faturamento por dia do mês corrente:
 media_fat_dia = fat_por_dia["faturamento"].mean()
+# Total de cupons no mês corrente:
+total_cupom_mes_corrente = base_filtro_mes['cupom'].sum()
 # Ticket Mẽdio mês corrente:
-ticket_medio_mes = fat_por_dia['faturamento'].sum() / base_filtro_mes['cupom'].sum()
+ticket_medio_mes = total_fat_mes_corrente / total_cupom_mes_corrente if total_cupom_mes_corrente != 0 else 0
+ticket_medio_mes2 = total_fat_mes_corrente / total_cupom_mes_corrente if total_cupom_mes_corrente != 0 else 0
+#ticket_medio_mes = total_fat_mes_corrente / total_cupom_mes_corrente
 # Média de cupons por dia do mês corrente:
 media_cupom = base_filtro_mes['cupom'].mean()
 # Montante faltante para atingir a meta do mês corrente:
@@ -965,6 +969,10 @@ while True:
         #faturamento_por_mes = base_filtro_ano.groupby("data")[["faturamento", "meta"]].sum().reset_index()
         #faturamento_por_mes["Percentual"] = faturamento_por_mes["faturamento"] / faturamento_por_mes["meta"]
 
+
+
+
+
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # ENVIO DE RELATÓRIO POR EMAIL:
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -1038,7 +1046,7 @@ while True:
             <p style='margin:0;'>- Faturamento Total: <strong>R$ {total_fat_mes_corrente:,.2f}</strong></p>
             <p style='margin:0;'>- Faturamento Médio Dia: <strong>R$ {media_fat_dia:,.2f}</strong></p>
             <p style='margin:0;'>- Média Cupons Dia: <strong>{media_cupom:.0f}</strong></p>
-            <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes:,.2f}</strong></p>
+            <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes2:,.2f}</strong></p>
             
             <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
             <p>- Ainda faltam <strong>R$ {meta_mes - total_fat_mes_corrente:,.2f}</strong> para atingirmos a  meta do mês.</p>
