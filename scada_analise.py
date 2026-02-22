@@ -72,8 +72,9 @@ base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B")
 base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B").str.capitalize()
 
 
-#------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------
 # FILTRO DE DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
+#---------------------------------------------------------------------------------------
 # Input para ANO e MES desejado para analises:
 ANO_EXIBICAO = int(input('Digite o Ano: '))
 MES_EXIBICAO = int(input('Digite o Mês: '))
@@ -200,8 +201,142 @@ total_perdas_ano = (
     .reset_index()
 )
 
+relatorio_fat = base_filtro_mes
+relatorio_perdas = perdas_motivo_mes
+relatorio_comissao = base_comissao_df
+
+total_alex = relatorio_comissao['Alex'].sum()
+total_david = relatorio_comissao['David'].sum()
+total_jaqueline = relatorio_comissao['Jaqueline'].sum()
+total_fabio = relatorio_comissao['Fabio'].sum()
+total_fatima = relatorio_comissao['Fatima'].sum()
+total_jessyca = relatorio_comissao['Jessyca'].sum()
+total_jesiana = relatorio_comissao['Jesiana'].sum()
+total_alexandro = relatorio_comissao['Alexandro'].sum()
+total_naiane = relatorio_comissao['Naiane'].sum()
+
+# ============================================================
+# ============================================================
+# FUNÇÃO PARA GERAR ARQUIVO EXCEL E ENVIAR POR EMAIL:
+# ============================================================
+# ============================================================
+
+# ============================================================
+# IMPORTAÇÕES
+# ============================================================
+
+import pandas as pd
+from datetime import datetime
+import smtplib
+from email.message import EmailMessage
+import os
+from senha_email import senha_app  # Senha de app do Gmail
 
 
+# ============================================================
+# CONFIGURAÇÕES DE EMAIL
+# ============================================================
+
+EMAIL_REMETENTE = "alex.pereira82log@gmail.com"
+EMAIL_DESTINO = "alex.barista@icloud.com"
+
+
+# ============================================================
+# FUNÇÃO PARA EXPORTAR EXCEL
+# ============================================================
+
+def exportar_excel(df, nome_base):
+    """
+    Exporta um DataFrame para Excel com nome automático.
+    Ajusta colunas numéricas para 2 casas decimais.
+    """
+
+    # Criar cópia para evitar SettingWithCopyWarning
+    df = df.copy()
+
+    # Arredondar colunas numéricas
+    colunas_numericas = df.select_dtypes(include=["float", "int"]).columns
+    for col in colunas_numericas:
+        df.loc[:, col] = df[col].round(2)
+
+    # Nome do arquivo
+    nome_arquivo = f"{nome_base}.xlsx"
+
+    # Exportar
+    df.to_excel(nome_arquivo, index=False, engine="openpyxl")
+
+    print(f"Arquivo gerado: {nome_arquivo}")
+
+    return nome_arquivo
+
+
+# ============================================================
+# FUNÇÃO PARA ENVIAR EMAIL COM ANEXO
+# ============================================================
+
+def enviar_email_com_anexo(caminho_arquivo):
+
+    try:
+        msg = EmailMessage()
+
+        # Nome do arquivo sem extensão (para usar como título)
+        nome_arquivo = os.path.basename(caminho_arquivo)
+        titulo_email = os.path.splitext(nome_arquivo)[0]
+
+        msg["Subject"] = titulo_email
+        msg["From"] = EMAIL_REMETENTE
+        msg["To"] = EMAIL_DESTINO
+
+        msg.set_content("Segue em anexo o relatório gerado automaticamente.")
+
+        # Ler arquivo
+        with open(caminho_arquivo, "rb") as f:
+            file_data = f.read()
+
+        msg.add_attachment(
+            file_data,
+            maintype="application",
+            subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            filename=nome_arquivo
+        )
+
+        # Conexão SMTP (mesmo padrão que já funcionava)
+        servidor = smtplib.SMTP("smtp.gmail.com", 587)
+        servidor.starttls()
+        servidor.login(EMAIL_REMETENTE, senha_app)
+        servidor.send_message(msg)
+        servidor.quit()
+
+        print("Email enviado com sucesso!")
+
+    except Exception as e:
+        print(f"Erro ao enviar email: {e}")
+
+
+# ============================================================
+# FUNÇÕES DE GERAÇÃO DOS RELATÓRIOS
+# ============================================================
+
+def gerar_relatorio_faturamento():
+    arquivo = exportar_excel(relatorio_fat, "Relatorio_Faturamento")
+    enviar_email_com_anexo(arquivo)
+
+
+def gerar_relatorio_perdas():
+    arquivo = exportar_excel(relatorio_perdas, "Relatorio_Perdas")
+    enviar_email_com_anexo(arquivo)
+
+
+def gerar_relatorio_comissao():
+    arquivo = exportar_excel(relatorio_comissao, "Relatorio_Comissao")
+    enviar_email_com_anexo(arquivo)
+    print
+
+
+
+
+
+#------------------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------------
 # MENU DE OPÇÕES:
 import os
@@ -228,7 +363,10 @@ while True:
     print("11 GRÁFICO - Dados Mês Atual")
     print("12 GRÁFICO - Evolução Meses")
     print("13 GRÁFICO - Impressão para Mural")
-    print("14 Enviar Relatório por Email")
+    print("14 Enviar Dados de Faturamento por Email")
+    print("15 Gerar relatório Faturamento")
+    print("16 Gerar relatório Comissão")
+    print("17 Gerar relatório Perdas")
     print("'x' para Sair")
     escolha = input("Escolha uma opção: ")
     
@@ -298,6 +436,18 @@ while True:
         print(f' Comissão atual: R$ {comissao_acum:,.2f}')
         print(f' Média diária: R$ {comissao_media_dia:,.2f}')
         print(f" Projeção comissão: R$ {comissao_proj:,.2f}")
+        print("\n" + "-" * 50)
+        print('TOTAL INDIVIDUAL:')
+        print('-')
+        print(f' Alex: {total_alex:,.2f}')
+        print(f' David: {total_david:,.2f}')
+        print(f' Jaqueline: {total_jaqueline:,.2f}')
+        print(f' Fábio: {total_fabio:,.2f}')
+        print(f' Fátima: {total_fatima:,.2f}')
+        print(f' Jessyca: {total_jessyca:,.2f}')
+        print(f' Jesiana: {total_jesiana:,.2f}')
+        print(f' Alexandro: {total_alexandro:,.2f}')
+        print(f' Naiane: {total_naiane:,.2f}')
         print("\n" + "-" * 50)
         aguardar_comando()
 
@@ -966,13 +1116,6 @@ while True:
 
     elif escolha == '14':
 
-        #faturamento_por_mes = base_filtro_ano.groupby("data")[["faturamento", "meta"]].sum().reset_index()
-        #faturamento_por_mes["Percentual"] = faturamento_por_mes["faturamento"] / faturamento_por_mes["meta"]
-
-
-
-
-
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # ENVIO DE RELATÓRIO POR EMAIL:
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -1094,6 +1237,20 @@ while True:
             print("Email enviado com sucesso!")
             
         enviar_email()
+
+    elif escolha == '15':
+        gerar_relatorio_faturamento()
+        aguardar_comando()
+
+    elif escolha == '16':
+        gerar_relatorio_comissao()
+        aguardar_comando()
+
+    elif escolha == '17':
+        gerar_relatorio_perdas()
+        aguardar_comando()
+
+
     elif escolha == "x":
             break
     else:
