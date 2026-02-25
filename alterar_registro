@@ -1,0 +1,3 @@
+UPDATE comissao
+SET Jessyca = 0
+WHERE data = '2026-02-24'
