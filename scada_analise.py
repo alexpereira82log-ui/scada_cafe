@@ -4,35 +4,32 @@
 
 #------------------------------------------------------------------------------------------------------------
 # CALCULAR QTD DE DIAS PARA O FIM DO MÊS:
-import matplotlib.pyplot as plt
-import numpy as np
-from cycler import cycler
+from datetime import date
+import calendar
 
-import datetime
+# Data atual
+hoje = date.today()
 
-hoje = datetime.date.today()
-ano = hoje.year
+# Extrair mês atual
 mes = hoje.month
-#mes_nome = hoje.strftime("%B")
-# Calcular último dia do mês corrente:
-if mes == 12:
-    ultimo_dia = datetime.date(ano + 1, 1, 1) - datetime.timedelta(days=1)
-else:
-    ultimo_dia = datetime.date(ano, mes + 1, 1) - datetime.timedelta(days=1)
-# Calcular dias restantes:
-dias_restantes = (ultimo_dia - hoje).days
 
-print(f"Faltam {dias_restantes} dias para terminar o mês.")
+# Último dia do mês atual
+ultimo_dia_mes = calendar.monthrange(hoje.year, mes)[1]
 
+# Cálculo dos dias restantes incluindo hoje
+dias_restantes = ultimo_dia_mes - hoje.day + 1
 
-meses = [
-    "",  # índice 0 vazio
-    "Janeiro", "Fevereiro", "Março", "Abril",
-    "Maio", "Junho", "Julho", "Agosto",
-    "Setembro", "Outubro", "Novembro", "Dezembro"
-]
+# Lista de nomes dos meses
+meses = {
+    1: "Janeiro", 2: "Fevereiro", 3: "Março",
+    4: "Abril", 5: "Maio", 6: "Junho",
+    7: "Julho", 8: "Agosto", 9: "Setembro",
+    10: "Outubro", 11: "Novembro", 12: "Dezembro"
+}
 
 mes_nome = meses[mes]
+
+print(f"Faltam {dias_restantes} dia(s) para terminar {mes_nome}.")
 
 
 #------------------------------------------------------------------------------------------------------------
