@@ -4,6 +4,10 @@
 
 #------------------------------------------------------------------------------------------------------------
 # CALCULAR QTD DE DIAS PARA O FIM DO MÊS:
+import matplotlib.pyplot as plt
+import numpy as np
+from cycler import cycler
+
 from datetime import date
 import calendar
 
