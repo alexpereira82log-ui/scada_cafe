@@ -1,16 +1,35 @@
-#------------------------------------------------------------------------------------------------------------
+# ============================================================
 # ANALISE DE DADOS SCADA CAFÉ:
-#------------------------------------------------------------------------------------------------------------
+# ============================================================
 
-#------------------------------------------------------------------------------------------------------------
-# CALCULAR QTD DE DIAS PARA O FIM DO MÊS:
+# ============================================================
+# IMPORTS:
+# ============================================================
 import matplotlib.pyplot as plt
 import numpy as np
-from cycler import cycler
-
-from datetime import date
 import calendar
+import pandas as pd
+import sqlite3
+import locale
+import smtplib # Biblioteca para envio de emails
+import os
+import time
+import email.message # Biblioteca para manipulação de mensagens de email
 
+
+from datetime import date, datetime
+from cycler import cycler
+from email.message import EmailMessage
+from senha_email import senha_app  # Importa a senha do email de um arquivo externo
+from email.mime.multipart import MIMEMultipart # Biblioteca para manipulação de emails com múltiplas partes
+from email.mime.text import MIMEText # Biblioteca para manipulação de texto em emails
+from email.mime.application import MIMEApplication # Biblioteca para manipulação de anexos em emails
+
+
+
+# ============================================================
+# CALCULAR QTD DE DIAS PARA O FIM DO MÊS:
+# ============================================================
 # Data atual
 hoje = date.today()
 
@@ -36,11 +55,9 @@ mes_nome = meses[mes]
 print(f"Faltam {dias_restantes} dia(s) para terminar {mes_nome}.")
 
 
-#------------------------------------------------------------------------------------------------------------
+# ============================================================
 # CONEXÃO COM O BANCO DE DADOS E CRIAÇÃO DO DATAFRAMEç
 # Importando a base de dados do SQL através do PANDAS:
-import pandas as pd
-import sqlite3
 
 conexao = sqlite3.connect("faturamento_scada.db")
 base_fat_df = pd.read_sql("SELECT * FROM base_fat", conexao)
@@ -54,7 +71,7 @@ conexao = sqlite3.connect("faturamento_scada.db")
 base_perdas_df = pd.read_sql("SELECT * FROM perdas", conexao)
 conexao.close()
 
-#------------------------------------------------------------------------------------------------------------
+# ============================================================
 # TRATAMENTO DE DADOS:
 # Alterar formato de colunas:
 base_fat_df["meta"] = pd.to_numeric(base_fat_df["meta"], errors="coerce")
@@ -73,7 +90,6 @@ base_comissao_df["mes"] = base_comissao_df["data"].dt.month
 base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B")
 
 # Exibir nome dos meses na coluna 'mes' em português:
-import locale
 locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
 
 base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B")
@@ -82,9 +98,9 @@ base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B").str.capitalize()
 base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B")
 base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B").str.capitalize()
 
-#---------------------------------------------------------------------------------------
+# ============================================================
 # FILTRO DE DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
-#---------------------------------------------------------------------------------------
+# ============================================================
 # Input para ANO e MES desejado para analises:
 ANO_EXIBICAO = int(input('Digite o Ano: '))
 MES_EXIBICAO = int(input('Digite o Mês: '))
@@ -234,17 +250,6 @@ total_naiane = relatorio_comissao['Naiane'].sum()
 # ============================================================
 # ============================================================
 
-# ============================================================
-# IMPORTAÇÕES
-# ============================================================
-
-import pandas as pd
-from datetime import datetime
-import smtplib
-from email.message import EmailMessage
-import os
-from senha_email import senha_app  # Senha de app do Gmail
-
 
 # ============================================================
 # CONFIGURAÇÕES DE EMAIL
@@ -353,12 +358,11 @@ def gerar_relatorio_comissao():
 
 
 
-#------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------
+# ============================================================
+# ============================================================
 # MENU DE OPÇÕES:
-import os
-import time
-
+# ============================================================
+# ============================================================
 def aguardar_comando():
     input("\nPressione ENTER para voltar ao menu...")
 
@@ -1136,15 +1140,7 @@ while True:
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # ENVIO DE RELATÓRIO POR EMAIL:
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-        # Importação de bibliotecas necessárias:
-        import smtplib # Biblioteca para envio de emails
-        import email.message # Biblioteca para manipulação de mensagens de email
-        from senha_email import senha_app # Importa a senha do email de um arquivo externo
-        from email.mime.multipart import MIMEMultipart # Biblioteca para manipulação de emails com múltiplas partes
-        from email.mime.text import MIMEText # Biblioteca para manipulação de texto em emails
-        from email.mime.application import MIMEApplication # Biblioteca para manipulação de anexos em emails
-        import os # Biblioteca para manipulação de arquivos e diretórios
-
+        
         # Formatação de variáveis para email:
         def dataframe_para_html(df):
             return df.to_html(
