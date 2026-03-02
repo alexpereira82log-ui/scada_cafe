@@ -251,7 +251,10 @@ from senha_email import senha_app  # Senha de app do Gmail
 # ============================================================
 
 EMAIL_REMETENTE = "alex.pereira82log@gmail.com"
-EMAIL_DESTINO = "alex.barista@icloud.com"
+EMAIL_DESTINOS = [
+    "alex.barista@icloud.com",
+    "alex.pereira82log@gmail.com"
+]
 
 
 # ============================================================
@@ -298,7 +301,8 @@ def enviar_email_com_anexo(caminho_arquivo):
 
         msg["Subject"] = titulo_email
         msg["From"] = EMAIL_REMETENTE
-        msg["To"] = EMAIL_DESTINO
+        msg["To"] = ", ".join(EMAIL_DESTINOS)
+        msg["Cc"] = "alex.pereira82log@gmail.com"
 
         msg.set_content("Segue em anexo o relatório gerado automaticamente.")
 
