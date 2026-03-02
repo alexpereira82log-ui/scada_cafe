@@ -61,17 +61,26 @@ base_fat_df["meta"] = pd.to_numeric(base_fat_df["meta"], errors="coerce")
 base_fat_df["faturamento"] = pd.to_numeric(base_fat_df["faturamento"], errors="coerce")
 base_fat_df['data'] = pd.to_datetime(base_fat_df['data'])
 
+base_comissao_df['data'] = pd.to_datetime(base_comissao_df['data'])
+
 # Criação de colunas auxiliares:
 base_fat_df["ano"] = base_fat_df["data"].dt.year
 base_fat_df["mes"] = base_fat_df["data"].dt.month
 base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B")
 
+base_comissao_df["ano"] = base_comissao_df["data"].dt.year
+base_comissao_df["mes"] = base_comissao_df["data"].dt.month
+base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B")
+
 # Exibir nome dos meses na coluna 'mes' em português:
 import locale
 locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
+
 base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B")
 base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B").str.capitalize()
 
+base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B")
+base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B").str.capitalize()
 
 #---------------------------------------------------------------------------------------
 # FILTRO DE DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
@@ -94,6 +103,9 @@ ordem_dias_semana = [
 # Filtro de dados por Ano e por Mês:
 base_filtro_ano = base_fat_df[base_fat_df["data"].dt.year == ANO_EXIBICAO]
 base_filtro_mes = base_filtro_ano[base_filtro_ano['data'].dt.month == MES_EXIBICAO]
+
+base_comiss_ano = base_comissao_df[base_comissao_df['data'].dt.year == ANO_EXIBICAO]
+base_comiss_mes = base_comissao_df[base_comissao_df['data'].dt.month == MES_EXIBICAO]
 
 # Soma total do faturamento do mes corrente:
 total_fat_mes_corrente = base_filtro_mes['faturamento'].sum()
@@ -156,9 +168,9 @@ fat_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['faturamento'].sum(
 ticket_eq_1 = base_filtro_mes[base_filtro_mes['equipe'] == '1']['ticket_medio'].mean()
 ticket_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['ticket_medio'].mean()
 # Total de comissão acumulada atual:
-comissao_acum = base_comissao_df['rateio'].sum()
+comissao_acum = base_comiss_mes['rateio'].sum()
 # Mẽdia de Comissão diária:
-comissao_media_dia = base_comissao_df['rateio'].mean()
+comissao_media_dia = base_comiss_mes['rateio'].mean()
 # Projeção de Comissão para o mês:
 comissao_proj = comissao_acum + (comissao_media_dia * dias_restantes)
 
@@ -204,7 +216,7 @@ total_perdas_ano = (
 
 relatorio_fat = base_filtro_mes
 relatorio_perdas = perdas_motivo_mes
-relatorio_comissao = base_comissao_df
+relatorio_comissao = base_comiss_mes
 
 total_alex = relatorio_comissao['Alex'].sum()
 total_david = relatorio_comissao['David'].sum()
