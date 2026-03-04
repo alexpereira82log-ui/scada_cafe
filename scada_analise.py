@@ -56,29 +56,41 @@ print(f"Faltam {dias_restantes} dia(s) para terminar {mes_nome}.")
 
 
 # ============================================================
-# CONEXÃO COM O BANCO DE DADOS E CRIAÇÃO DO DATAFRAMEç
+# CONEXÃO COM O BANCO DE DADOS E CRIAÇÃO DO DATAFRAME:
+# ============================================================
 # Importando a base de dados do SQL através do PANDAS:
 
-conexao = sqlite3.connect("faturamento_scada.db")
-base_fat_df = pd.read_sql("SELECT * FROM base_fat", conexao)
-conexao.close()
+with sqlite3.connect("faturamento_scada.db") as conexao:
+    base_fat_df = pd.read_sql("SELECT * FROM base_fat", conexao)
+    base_comissao_df = pd.read_sql("SELECT * FROM comissao", conexao)
+    base_perdas_df = pd.read_sql("SELECT * FROM perdas", conexao)
+    base_produtos_df = pd.read_sql("SELECT * FROM venda_produtos", conexao)
 
-conexao = sqlite3.connect("faturamento_scada.db")
-base_comissao_df = pd.read_sql("SELECT * FROM comissao", conexao)
-conexao.close()
-
-conexao = sqlite3.connect("faturamento_scada.db")
-base_perdas_df = pd.read_sql("SELECT * FROM perdas", conexao)
-conexao.close()
 
 # ============================================================
 # TRATAMENTO DE DADOS:
+# ============================================================
+
+# Garantir que colunas numéricas estejam corretas:
+colunas_numericas_produtos = ["qtd", "valor_unit", "valor_total", "perc_total_venda"]
+
+for col in colunas_numericas_produtos:
+    base_produtos_df[col] = (
+        base_produtos_df[col]
+        .astype(str)
+        .str.replace(",", ".", regex=False)
+        .str.replace("%", "", regex=False)
+    )
+    base_produtos_df[col] = pd.to_numeric(base_produtos_df[col], errors="coerce")
+
 # Alterar formato de colunas:
 base_fat_df["meta"] = pd.to_numeric(base_fat_df["meta"], errors="coerce")
 base_fat_df["faturamento"] = pd.to_numeric(base_fat_df["faturamento"], errors="coerce")
 base_fat_df['data'] = pd.to_datetime(base_fat_df['data'])
 
 base_comissao_df['data'] = pd.to_datetime(base_comissao_df['data'])
+
+base_produtos_df['mes'] = pd.to_datetime(base_produtos_df['mes'])
 
 # Criação de colunas auxiliares:
 base_fat_df["ano"] = base_fat_df["data"].dt.year
@@ -89,6 +101,10 @@ base_comissao_df["ano"] = base_comissao_df["data"].dt.year
 base_comissao_df["mes"] = base_comissao_df["data"].dt.month
 base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B")
 
+base_produtos_df["ano"] = base_produtos_df["mes"].dt.year
+base_produtos_df["mes_num"] = base_produtos_df["mes"].dt.month
+base_produtos_df["mes_nome"] = base_produtos_df["mes"].dt.strftime("%B")
+
 # Exibir nome dos meses na coluna 'mes' em português:
 locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
 
@@ -97,6 +113,9 @@ base_fat_df["mes_nome"] = base_fat_df["data"].dt.strftime("%B").str.capitalize()
 
 base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B")
 base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B").str.capitalize()
+
+base_produtos_df["mes_nome"] = base_produtos_df["mes"].dt.strftime("%B")
+base_produtos_df["mes_nome"] = base_produtos_df["mes"].dt.strftime("%B").str.capitalize()
 
 # ============================================================
 # FILTRO DE DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
@@ -154,16 +173,17 @@ media_fat_dia_semana = (
 )
 
 # Meta do mês corrente:
-meta_mes = base_filtro_mes['meta'].sum()
+meta_mes = base_filtro_mes['meta'].sum(min_count=1)
+meta_mes = 0 if pd.isna(meta_mes) else float(meta_mes)
 # Percentual atingido da meta do mês corrente:
-perc_meta_mes = (total_fat_mes_corrente / meta_mes) * 100
+perc_meta_mes = (total_fat_mes_corrente / meta_mes) if meta_mes != 0 else 0
+#perc_meta_mes = (total_fat_mes_corrente / meta_mes * 100) if meta_mes != 0 else 0
 # Mẽdia de faturamento por dia do mês corrente:
 media_fat_dia = fat_por_dia["faturamento"].mean()
 # Total de cupons no mês corrente:
 total_cupom_mes_corrente = base_filtro_mes['cupom'].sum()
 # Ticket Mẽdio mês corrente:
 ticket_medio_mes = total_fat_mes_corrente / total_cupom_mes_corrente if total_cupom_mes_corrente != 0 else 0
-ticket_medio_mes2 = total_fat_mes_corrente / total_cupom_mes_corrente if total_cupom_mes_corrente != 0 else 0
 #ticket_medio_mes = total_fat_mes_corrente / total_cupom_mes_corrente
 # Média de cupons por dia do mês corrente:
 media_cupom = base_filtro_mes['cupom'].mean()
@@ -204,22 +224,51 @@ base_perdas_df['qtd'] = (
     .astype(float)
 )
 
-# Filtrando a base de perdas:
-perdas_motivo_mes = base_perdas_df
-perdas_motivo_mes = perdas_motivo_mes[perdas_motivo_mes["data"].dt.month == MES_EXIBICAO]
-perdas_motivo_filtrado = perdas_motivo_mes.groupby("motivo")[["item"]].count().reset_index()
-
+# Filtrando as bases:
 # Por ano:
-perdas_motivo_ano = base_perdas_df
-perdas_motivo_ano = perdas_motivo_ano[perdas_motivo_ano["data"].dt.year == ANO_EXIBICAO]
+perdas_motivo_ano = base_perdas_df[base_perdas_df["data"].dt.year == ANO_EXIBICAO]
 perdas_motivo_filtrado2 = perdas_motivo_ano.groupby("motivo")[["item"]].count().reset_index()
 
+venda_produtos_ano = base_produtos_df[base_produtos_df["ano"] == ANO_EXIBICAO]
+venda_produtos_filtrado = (
+    venda_produtos_ano
+    .groupby("produto")
+    .agg({
+        "qtd": "sum",
+        "valor_total": "sum",
+        "valor_unit": "mean",
+        "perc_total_venda": "mean"
+    })
+    .reset_index()
+)
+
+# Por Mês:
+perdas_motivo_mes = base_perdas_df[(base_perdas_df["data"].dt.month == MES_EXIBICAO) & (base_perdas_df["data"].dt.year == ANO_EXIBICAO)]
+perdas_motivo_filtrado = perdas_motivo_mes.groupby("motivo")[["item"]].count().reset_index()
+
+venda_produtos_mes = base_produtos_df[(base_produtos_df["mes_num"] == MES_EXIBICAO) & (base_produtos_df["ano"] == ANO_EXIBICAO)]
+venda_produtos_filtrado2 = (
+    venda_produtos_mes
+    .groupby("produto")
+    .agg({
+        "qtd": "sum",
+        "valor_total": "sum",
+        "valor_unit": "mean",
+        "perc_total_venda": "mean"
+    })
+    .reset_index()
+)
+
+
 #perdas_motivo = perdas_motivo[perdas_motivo["Data da perda"].dt.month == MES_EXIBICAO]
-# Ordenar por quantidade de perdas:
+# Ordenar por valores:
 perdas_motivo_filtrado = perdas_motivo_filtrado.sort_values("item", ascending=False).reset_index(drop=True)
 perdas_motivo_filtrado2 = perdas_motivo_filtrado2.sort_values("item", ascending=False).reset_index(drop=True)
+
+venda_produtos_filtrado = venda_produtos_filtrado.sort_values("qtd", ascending=False).reset_index(drop=True)
+venda_produtos_filtrado2 = venda_produtos_filtrado2.sort_values("qtd", ascending=False).reset_index(drop=True)
 # Relação de perdas do mês:
-relacao_perdas_mes = base_perdas_df[base_perdas_df["data"].dt.month == MES_EXIBICAO]
+relacao_perdas_mes = base_perdas_df[(base_perdas_df["data"].dt.month == MES_EXIBICAO) & (base_perdas_df["data"].dt.year == ANO_EXIBICAO)]
 # Somatório total do número de ocorrências de perdas:
 total_perdas_mes = perdas_motivo_filtrado["item"].sum()
 #total_perdas_ano = perdas_motivo_ano.groupby('data')[['item']].count().reset_index()
@@ -243,6 +292,16 @@ total_jessyca = relatorio_comissao['Jessyca'].sum()
 total_jesiana = relatorio_comissao['Jesiana'].sum()
 total_alexandro = relatorio_comissao['Alexandro'].sum()
 total_naiane = relatorio_comissao['Naiane'].sum()
+
+# Garantindo que as variáveis abaixo são numéricas:
+meta_mes = float(meta_mes)
+total_fat_mes_corrente = float(total_fat_mes_corrente)
+media_fat_dia = float(media_fat_dia)
+media_cupom = float(media_cupom)
+ticket_medio_mes = float(ticket_medio_mes)
+proj_fat_mes = float(proj_fat_mes)
+meta_ticket_dia = float(meta_ticket_dia)
+meta_fat_dia = float(meta_fat_dia)
 
 # ============================================================
 # ============================================================
@@ -415,7 +474,8 @@ while True:
     elif escolha == "4":
         print("\n" + "-" * 50)
         print("- RANKING PRODUTOS MAIS VENDIDOS:")
-        print(' EM CONSTRUÇÃO')
+        print('NO ANO:')
+        print(venda_produtos_filtrado.head(10))
         print("\n" + "-" * 50)
         aguardar_comando()
 
@@ -424,7 +484,7 @@ while True:
         print(f'- DADOS FATURAMENTO - {mes_nome}:')
         print(f' Meta Mês: R$ {meta_mes:,.2f}')
         print(f' Faturamento atual: R$ {total_fat_mes_corrente:,.2f}')
-        print(f' % Meta: {total_fat_mes_corrente / meta_mes:.0%}')
+        print(f' % Meta: {perc_meta_mes:.0%}')
         print(f' Faturamento Médio Dia: R$ {media_fat_dia:,.2f}')
         print(f' Ticket Médio Dia: R$ {ticket_medio_mes:,.2f}')
         print(f' Média Cupons Dia: {media_cupom:.0f}')
@@ -1202,7 +1262,7 @@ while True:
             <p style='margin:0;'>- Faturamento Total: <strong>R$ {total_fat_mes_corrente:,.2f}</strong></p>
             <p style='margin:0;'>- Faturamento Médio Dia: <strong>R$ {media_fat_dia:,.2f}</strong></p>
             <p style='margin:0;'>- Média Cupons Dia: <strong>{media_cupom:.0f}</strong></p>
-            <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes2:,.2f}</strong></p>
+            <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes:,.2f}</strong></p>
             
             <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
             <p>- Ainda faltam <strong>R$ {meta_mes - total_fat_mes_corrente:,.2f}</strong> para atingirmos a  meta do mês.</p>
