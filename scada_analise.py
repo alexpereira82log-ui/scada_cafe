@@ -15,6 +15,7 @@ import smtplib # Biblioteca para envio de emails
 import os
 import time
 import email.message # Biblioteca para manipulação de mensagens de email
+import subprocess
 
 
 from datetime import date, datetime
@@ -24,7 +25,6 @@ from senha_email import senha_app  # Importa a senha do email de um arquivo exte
 from email.mime.multipart import MIMEMultipart # Biblioteca para manipulação de emails com múltiplas partes
 from email.mime.text import MIMEText # Biblioteca para manipulação de texto em emails
 from email.mime.application import MIMEApplication # Biblioteca para manipulação de anexos em emails
-
 
 
 # ============================================================
@@ -62,7 +62,7 @@ print(f"Faltam {dias_restantes} dia(s) para terminar {mes_nome}.")
 
 with sqlite3.connect("faturamento_scada.db") as conexao:
     base_fat_df = pd.read_sql("SELECT * FROM base_fat", conexao)
-    base_comissao_df = pd.read_sql("SELECT * FROM comissao", conexao)
+    base_comissao_df = pd.read_sql("SELECT * FROM comissao_colaborador", conexao)
     base_perdas_df = pd.read_sql("SELECT * FROM perdas", conexao)
     base_produtos_df = pd.read_sql("SELECT * FROM venda_produtos", conexao)
 
@@ -204,11 +204,60 @@ fat_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['faturamento'].sum(
 ticket_eq_1 = base_filtro_mes[base_filtro_mes['equipe'] == '1']['ticket_medio'].mean()
 ticket_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['ticket_medio'].mean()
 # Total de comissão acumulada atual:
-comissao_acum = base_comiss_mes['rateio'].sum()
+conn = sqlite3.connect("faturamento_scada.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+SELECT COALESCE(SUM(rateio_dia),0)
+FROM (
+    SELECT data, MAX(valor) AS rateio_dia
+    FROM comissao_colaborador
+    WHERE presente = 1
+    GROUP BY data
+)
+""")
+
+comissao_acum = cursor.fetchone()[0]
+
+conn.close()
+
 # Mẽdia de Comissão diária:
-comissao_media_dia = base_comiss_mes['rateio'].mean()
+conn = sqlite3.connect("faturamento_scada.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+SELECT COALESCE(AVG(rateio_dia),0)
+FROM (
+    SELECT data, MAX(valor) AS rateio_dia
+    FROM comissao_colaborador
+    WHERE presente = 1
+    GROUP BY data
+)
+""")
+
+comissao_media_dia = cursor.fetchone()[0]
+
+conn.close()
+
 # Projeção de Comissão para o mês:
 comissao_proj = comissao_acum + (comissao_media_dia * dias_restantes)
+
+# Soma comissão individual:
+conn = sqlite3.connect("faturamento_scada.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+SELECT c.nome, COALESCE(SUM(cc.valor),0) AS total_comissao
+FROM colaboradores c
+LEFT JOIN comissao_colaborador cc
+    ON c.id = cc.colaborador_id
+GROUP BY c.nome
+ORDER BY total_comissao DESC
+""")
+
+comissao_ind = cursor.fetchall()
+
+conn.close()
 
 # Variaveis da base de perdas:
 base_perdas_df["data"] = pd.to_datetime(
@@ -282,16 +331,6 @@ total_perdas_ano = (
 relatorio_fat = base_filtro_mes
 relatorio_perdas = perdas_motivo_mes
 relatorio_comissao = base_comiss_mes
-
-total_alex = relatorio_comissao['Alex'].sum()
-total_david = relatorio_comissao['David'].sum()
-total_jaqueline = relatorio_comissao['Jaqueline'].sum()
-total_fabio = relatorio_comissao['Fabio'].sum()
-total_fatima = relatorio_comissao['Fatima'].sum()
-total_jessyca = relatorio_comissao['Jessyca'].sum()
-total_jesiana = relatorio_comissao['Jesiana'].sum()
-total_alexandro = relatorio_comissao['Alexandro'].sum()
-total_naiane = relatorio_comissao['Naiane'].sum()
 
 # Garantindo que as variáveis abaixo são numéricas:
 meta_mes = float(meta_mes)
@@ -409,12 +448,54 @@ def gerar_relatorio_perdas():
 
 
 def gerar_relatorio_comissao():
-    arquivo = exportar_excel(relatorio_comissao, "Relatorio_Comissao")
-    enviar_email_com_anexo(arquivo)
-    print
+    # CONEXÃO COM BANCO
+    conn = sqlite3.connect("faturamento_scada.db")
 
+    query = """
+    SELECT 
+        cc.data,
+        c.nome AS colaborador,
+        cc.valor
+    FROM comissao_colaborador cc
+    JOIN colaboradores c
+        ON c.id = cc.colaborador_id
+    ORDER BY cc.data
+    """
 
+    df = pd.read_sql_query(query, conn)
 
+    conn.close()
+
+    # CRIAR TABELA GERENCIAL (PIVOT)
+    tabela_comissao = df.pivot_table(
+        index="data",
+        columns="colaborador",
+        values="valor",
+        aggfunc="sum",
+        fill_value=0
+    )
+
+    # TOTAL POR COLABORADOR
+    tabela_comissao.loc["TOTAL"] = tabela_comissao.sum()
+
+    # EXPORTAR PARA EXCEL
+    nome_arquivo = "Relatorio_Comissao_Gerencial.xlsx"
+
+    tabela_comissao.to_excel(
+        nome_arquivo,
+        engine="openpyxl"
+    )
+
+    print("Relatório de comissão gerado com sucesso!")
+
+    # ABRIR O EXCEL AUTOMATICAMENTE
+    try:
+        subprocess.Popen(["xdg-open", nome_arquivo])
+    except Exception as e:
+        print(f"Não foi possível abrir o arquivo automaticamente: {e}")
+
+    # ENVIAR EMAIL COM ANEXO
+    enviar_email_com_anexo(nome_arquivo)
 
 
 # ============================================================
@@ -518,17 +599,10 @@ while True:
         print(f' Média diária: R$ {comissao_media_dia:,.2f}')
         print(f" Projeção comissão: R$ {comissao_proj:,.2f}")
         print("\n" + "-" * 50)
-        print('TOTAL INDIVIDUAL:')
-        print('-')
-        print(f' Alex: {total_alex:,.2f}')
-        print(f' David: {total_david:,.2f}')
-        print(f' Jaqueline: {total_jaqueline:,.2f}')
-        print(f' Fábio: {total_fabio:,.2f}')
-        print(f' Fátima: {total_fatima:,.2f}')
-        print(f' Jessyca: {total_jessyca:,.2f}')
-        print(f' Jesiana: {total_jesiana:,.2f}')
-        print(f' Alexandro: {total_alexandro:,.2f}')
-        print(f' Naiane: {total_naiane:,.2f}')
+        print("\nCOMISSÃO ACUMULADA POR COLABORADOR")
+        print("-" * 40)
+        for nome, valor in comissao_ind:
+            print(f"{nome}: R$ {valor:,.2f}")
         print("\n" + "-" * 50)
         aguardar_comando()
 
