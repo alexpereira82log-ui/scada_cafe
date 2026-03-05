@@ -352,10 +352,7 @@ meta_fat_dia = float(meta_fat_dia)
 
 # CONFIGURAÇÕES DE EMAIL
 EMAIL_REMETENTE = "alex.pereira82log@gmail.com"
-EMAIL_DESTINOS = [
-    "alex.barista@icloud.com",
-    "alex.pereira82log@gmail.com"
-]
+EMAIL_DESTINOS = "alex.barista@icloud.com"
 
 
 # FUNÇÃO PARA EXPORTAR EXCEL
