@@ -204,6 +204,8 @@ fat_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['faturamento'].sum(
 # Ticket Médio por Equipe:
 ticket_eq_1 = base_filtro_mes[base_filtro_mes['equipe'] == '1']['ticket_medio'].mean()
 ticket_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['ticket_medio'].mean()
+# Faturamento faltante para a meta:
+falta_meta = meta_mes - total_fat_mes_corrente
 
 # Total de comissão acumulada atual:
 conn = sqlite3.connect("faturamento_scada.db")
@@ -342,6 +344,8 @@ ticket_medio_mes = float(ticket_medio_mes)
 proj_fat_mes = float(proj_fat_mes)
 meta_ticket_dia = float(meta_ticket_dia)
 meta_fat_dia = float(meta_fat_dia)
+falta_para_meta = float(falta_para_meta)
+
 
 
 # ============================================================
@@ -1325,7 +1329,7 @@ while True:
             <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes:,.2f}</strong></p>
             
             <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
-            <p>- Ainda faltam <strong>R$ {meta_mes - total_fat_mes_corrente:,.2f}</strong> para atingirmos a  meta do mês.</p>
+            <p>- Ainda faltam <strong>R$ {falta_para_meta:,.2f}</strong> para atingirmos a  meta do mês.</p>
             <p> </p>
             <p>- Estamos projetando <strong>R$ {proj_fat_mes:,.2f}</strong> de faturamento no mês.</p>
             <p> </p>
