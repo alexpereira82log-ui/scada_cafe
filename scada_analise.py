@@ -117,6 +117,7 @@ base_comissao_df["mes_nome"] = base_comissao_df["data"].dt.strftime("%B").str.ca
 base_produtos_df["mes_nome"] = base_produtos_df["mes"].dt.strftime("%B")
 base_produtos_df["mes_nome"] = base_produtos_df["mes"].dt.strftime("%B").str.capitalize()
 
+
 # ============================================================
 # FILTRO DE DADOS E CRIAÇÃO DE VARIÁVEIS AUXILIARES:
 # ============================================================
@@ -203,6 +204,7 @@ fat_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['faturamento'].sum(
 # Ticket Médio por Equipe:
 ticket_eq_1 = base_filtro_mes[base_filtro_mes['equipe'] == '1']['ticket_medio'].mean()
 ticket_eq_2 = base_filtro_mes[base_filtro_mes['equipe'] == '2']['ticket_medio'].mean()
+
 # Total de comissão acumulada atual:
 conn = sqlite3.connect("faturamento_scada.db")
 cursor = conn.cursor()
@@ -309,7 +311,6 @@ venda_produtos_filtrado2 = (
 )
 
 
-#perdas_motivo = perdas_motivo[perdas_motivo["Data da perda"].dt.month == MES_EXIBICAO]
 # Ordenar por valores:
 perdas_motivo_filtrado = perdas_motivo_filtrado.sort_values("item", ascending=False).reset_index(drop=True)
 perdas_motivo_filtrado2 = perdas_motivo_filtrado2.sort_values("item", ascending=False).reset_index(drop=True)
@@ -342,17 +343,14 @@ proj_fat_mes = float(proj_fat_mes)
 meta_ticket_dia = float(meta_ticket_dia)
 meta_fat_dia = float(meta_fat_dia)
 
+
 # ============================================================
 # ============================================================
-# FUNÇÃO PARA GERAR ARQUIVO EXCEL E ENVIAR POR EMAIL:
+# CRIAÇÃO DE FUNÇÕES:
 # ============================================================
 # ============================================================
 
-
-# ============================================================
 # CONFIGURAÇÕES DE EMAIL
-# ============================================================
-
 EMAIL_REMETENTE = "alex.pereira82log@gmail.com"
 EMAIL_DESTINOS = [
     "alex.barista@icloud.com",
@@ -360,10 +358,7 @@ EMAIL_DESTINOS = [
 ]
 
 
-# ============================================================
 # FUNÇÃO PARA EXPORTAR EXCEL
-# ============================================================
-
 def exportar_excel(df, nome_base):
     """
     Exporta um DataFrame para Excel com nome automático.
@@ -389,10 +384,7 @@ def exportar_excel(df, nome_base):
     return nome_arquivo
 
 
-# ============================================================
 # FUNÇÃO PARA ENVIAR EMAIL COM ANEXO
-# ============================================================
-
 def enviar_email_com_anexo(caminho_arquivo):
 
     try:
@@ -433,10 +425,7 @@ def enviar_email_com_anexo(caminho_arquivo):
         print(f"Erro ao enviar email: {e}")
 
 
-# ============================================================
 # FUNÇÕES DE GERAÇÃO DOS RELATÓRIOS
-# ============================================================
-
 def gerar_relatorio_faturamento():
     arquivo = exportar_excel(relatorio_fat, "Relatorio_Faturamento")
     enviar_email_com_anexo(arquivo)
@@ -497,15 +486,15 @@ def gerar_relatorio_comissao():
     # ENVIAR EMAIL COM ANEXO
     enviar_email_com_anexo(nome_arquivo)
 
+def aguardar_comando():
+    input("\nPressione ENTER para voltar ao menu...")
+
 
 # ============================================================
 # ============================================================
 # MENU DE OPÇÕES:
 # ============================================================
 # ============================================================
-def aguardar_comando():
-    input("\nPressione ENTER para voltar ao menu...")
-
 
 while True:
     os.system("cls" if os.name == "nt" else "clear")
