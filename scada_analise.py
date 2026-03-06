@@ -829,7 +829,11 @@ while True:
         # Filtrar meses com perdas > 0
         perdas_por_mes = perdas_por_mes.loc[perdas_por_mes['qtd'] > 0].copy()
 
-        media_perdas_mes = perdas_por_mes['qtd'].mean()
+        # Calcular média do mês excluindo o mes atual:
+        mes_atual = datetime.today().month
+        perdas_meses_fechados = perdas_por_mes[perdas_por_mes['data'] < mes_atual]
+        media_perdas_mes = perdas_meses_fechados['qtd'].mean()
+
 
         perdas_mes = axs["C"].bar(
             perdas_por_mes['mes'],
@@ -941,7 +945,12 @@ while True:
         faturamento_por_mes = faturamento_por_mes.sort_values("mes")
 
         # Média do faturamento
-        media_faturamento_mes = faturamento_por_mes["faturamento"].mean()
+        mes_atual = datetime.today().month
+        faturamento_meses_fechados = faturamento_por_mes[
+            faturamento_por_mes["mes"] < mes_atual
+        ]
+        media_faturamento_mes = faturamento_meses_fechados["faturamento"].mean()
+
 
         barras_meta = axs["A"].bar(
             faturamento_por_mes["mes_nome"],
@@ -1047,6 +1056,7 @@ while True:
 
         axs["C"].set_ylabel('Ticket Médio (R$)', color='steelblue', fontsize=10)
         axs["C"].set_xlabel('Mês')
+        axs["C"].set_xticks(faturamento_por_dia["mes"])
         axs["C"].grid(True, linestyle='--', alpha=0.4)
 
         for mes, ticket in zip(ticket_medio_mes["mes"], ticket_medio_mes["ticket_medio"]):
@@ -1141,7 +1151,12 @@ while True:
         faturamento_por_mes["Percentual"] = faturamento_por_mes["faturamento"] / faturamento_por_mes["meta"]
 
         # Média do faturamento
-        media_faturamento_mes = faturamento_por_mes["faturamento"].mean()
+        mes_atual = datetime.today().month
+        faturamento_meses_fechados = faturamento_por_mes[
+            faturamento_por_mes["mes"] < mes_atual
+        ]
+        media_faturamento_mes = faturamento_meses_fechados["faturamento"].mean()
+
 
         barras_meta = axs["A"].bar(
             faturamento_por_mes["mes_nome"],
@@ -1211,7 +1226,11 @@ while True:
         # Filtrar meses com perdas > 0
         perdas_por_mes = perdas_por_mes.loc[perdas_por_mes['qtd'] > 0].copy()
 
-        media_perdas_mes = perdas_por_mes['qtd'].mean()
+        # Calcular média do mês excluindo o mes atual:
+        mes_atual = datetime.today().month
+        perdas_meses_fechados = perdas_por_mes[perdas_por_mes['data'] < mes_atual]
+        media_perdas_mes = perdas_meses_fechados['qtd'].mean()
+
 
         perdas_mes = axs["B"].bar(
             perdas_por_mes['mes'],
@@ -1300,6 +1319,24 @@ while True:
 
         # Criação de função para enviar email:
         def enviar_email():
+
+            # ---- GARANTE QUE TODAS AS VARIÁVEIS NUMÉRICAS SÃO FLOAT ----
+            meta_mes_float = float(meta_mes)
+            total_fat_mes_corrente_float = float(total_fat_mes_corrente)
+            media_fat_dia_float = float(media_fat_dia)
+            media_cupom_float = float(media_cupom)
+            ticket_medio_mes = base_filtro_mes["ticket_medio"].mean()
+            if isinstance(ticket_medio_mes, pd.DataFrame):
+                ticket_medio_mes_float = float(ticket_medio_mes.iloc[0, 0])
+            elif isinstance(ticket_medio_mes, pd.Series):
+                ticket_medio_mes_float = float(ticket_medio_mes.iloc[0])
+            else:
+                ticket_medio_mes_float = float(ticket_medio_mes)
+            falta_para_meta_float = float(falta_para_meta)
+            proj_fat_mes_float = float(proj_fat_mes)
+            meta_ticket_dia_float = float(meta_ticket_dia)
+            meta_fat_dia_float = float(meta_fat_dia)
+            
             msg = MIMEMultipart()
             msg["Subject"] = f"Relatório Scada Café - Loja Cinema - {ANO_EXIBICAO}"
             msg["From"] = "alex.pereira82log@gmail.com"
@@ -1350,8 +1387,8 @@ while True:
             <p style='margin:0;'>- Faturamento Total: <strong>R$ {total_fat_mes_corrente:,.2f}</strong></p>
             <p style='margin:0;'>- Faturamento Médio Dia: <strong>R$ {media_fat_dia:,.2f}</strong></p>
             <p style='margin:0;'>- Média Cupons Dia: <strong>{media_cupom:.0f}</strong></p>
-            <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes:,.2f}</strong></p>
-            
+            <p style='margin:0;'>- Ticket Médio Dia: <strong>R$ {ticket_medio_mes_float:,.2f}</strong></p>
+                  
             <p><strong><span style="text-decoration: underline;">PROJEÇÕES E RECUPERAÇÃO META:</span></strong></p>
             <p>- Ainda faltam <strong>R$ {falta_para_meta:,.2f}</strong> para atingirmos a  meta do mês.</p>
             <p> </p>
