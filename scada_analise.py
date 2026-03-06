@@ -356,7 +356,7 @@ falta_para_meta = float(falta_para_meta)
 
 # CONFIGURAÇÕES DE EMAIL
 EMAIL_REMETENTE = "alex.pereira82log@gmail.com"
-EMAIL_DESTINOS = "alex.barista@icloud.com"
+EMAIL_DESTINOS = ["alex.barista@icloud.com"]
 
 
 # FUNÇÃO PARA EXPORTAR EXCEL
