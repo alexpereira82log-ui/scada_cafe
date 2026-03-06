@@ -25,6 +25,8 @@ from senha_email import senha_app  # Importa a senha do email de um arquivo exte
 from email.mime.multipart import MIMEMultipart # Biblioteca para manipulação de emails com múltiplas partes
 from email.mime.text import MIMEText # Biblioteca para manipulação de texto em emails
 from email.mime.application import MIMEApplication # Biblioteca para manipulação de anexos em emails
+from openpyxl import load_workbook
+from openpyxl.styles import Font
 
 
 # ============================================================
@@ -400,7 +402,7 @@ def enviar_email_com_anexo(caminho_arquivo):
         msg["To"] = ", ".join(EMAIL_DESTINOS)
         msg["Cc"] = "alex.pereira82log@gmail.com"
 
-        msg.set_content("Segue em anexo o relatório gerado automaticamente.")
+        msg.set_content("Segue em anexo o relatório solicitado.")
 
         # Ler arquivo
         with open(caminho_arquivo, "rb") as f:
@@ -438,6 +440,7 @@ def gerar_relatorio_perdas():
 
 
 def gerar_relatorio_comissao():
+
     # CONEXÃO COM BANCO
     conn = sqlite3.connect("faturamento_scada.db")
 
@@ -469,14 +472,34 @@ def gerar_relatorio_comissao():
     tabela_comissao.loc["TOTAL"] = tabela_comissao.sum()
 
     # EXPORTAR PARA EXCEL
-    nome_arquivo = "Relatorio_Comissao_Gerencial.xlsx"
+    nome_arquivo = "Relatorio_Comissao.xlsx"
 
     tabela_comissao.to_excel(
         nome_arquivo,
         engine="openpyxl"
     )
 
-    print("Relatório de comissão gerado com sucesso!")
+    # =========================
+    # FORMATAÇÃO NO EXCEL
+    # =========================
+    wb = load_workbook(nome_arquivo)
+    ws = wb.active
+
+    ultima_linha = ws.max_row
+    ultima_coluna = ws.max_column
+
+    # FORMATO NUMÉRICO (2 casas decimais)
+    for row in ws.iter_rows(min_row=2, min_col=2, max_row=ultima_linha, max_col=ultima_coluna):
+        for cell in row:
+            cell.number_format = "0.00"
+
+    # LINHA TOTAL EM NEGRITO
+    for cell in ws[ultima_linha]:
+        cell.font = Font(bold=True)
+
+    wb.save(nome_arquivo)
+
+    print("Relatório de comissão gerado!")
 
     # ABRIR O EXCEL AUTOMATICAMENTE
     try:
@@ -486,6 +509,7 @@ def gerar_relatorio_comissao():
 
     # ENVIAR EMAIL COM ANEXO
     enviar_email_com_anexo(nome_arquivo)
+
 
 def aguardar_comando():
     input("\nPressione ENTER para voltar ao menu...")
