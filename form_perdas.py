@@ -117,7 +117,8 @@ combo_responsavel = ttk.Combobox(
         "David",
         "Alexandro",
         "Jessyca",
-        "Naiane"
+        "Naiane",
+        "Francisca"
     ],
     state="readonly"
 )
