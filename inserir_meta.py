@@ -31,6 +31,8 @@ df["meta"] = (
 
 df["meta"] = pd.to_numeric(df["meta"], errors="coerce")
 
+df["meta"] = df["meta"].round(2)
+
 # ================================
 # 3. VALIDAÇÃO
 # ================================
