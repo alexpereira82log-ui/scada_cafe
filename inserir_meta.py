@@ -4,7 +4,7 @@ import sqlite3
 # ================================
 # CONFIGURAÇÕES
 # ================================
-CAMINHO_EXCEL = "metas_marco.xlsx"
+CAMINHO_EXCEL = "metas.xlsx"
 BANCO_DADOS = "faturamento_scada.db"
 TABELA_DESTINO = "base_fat"
 TABELA_TEMP = "temp_meta_import"
