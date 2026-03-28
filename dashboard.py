@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 from database.connection import carregar_dados
 from utils.tratamento import tratar_dados
@@ -17,6 +17,7 @@ st.set_page_config(
 )
 
 st.title("📊 Dashboard Scada Café")
+st.markdown("---")
 
 # =========================
 # CARREGAR DADOS
@@ -29,14 +30,14 @@ dados = tratar_dados(dados)
 # =========================
 st.sidebar.header("Filtros")
 
-anos = sorted(dados["base_fat"]["data"].dt.year.unique())
+anos = sorted(dados["base_fat"]["ano"].dropna().unique())
 ano = st.sidebar.selectbox("Selecione o Ano", anos)
 
 meses = list(range(1, 13))
 mes = st.sidebar.selectbox("Selecione o Mês", meses)
 
 # =========================
-# MÉTRICAS
+# MÉTRICAS (KPIs)
 # =========================
 metricas = calcular_metricas(dados, ano, mes)
 
@@ -47,24 +48,102 @@ col2.metric("Meta", f"R$ {metricas['meta']:,.2f}")
 col3.metric("% Meta", f"{metricas['perc_meta']:.0%}")
 col4.metric("Ticket Médio", f"R$ {metricas['ticket_medio']:,.2f}")
 
+st.markdown("---")
+
 # =========================
-# GRÁFICO FATURAMENTO
+# 📈 SEÇÃO 1 — FATURAMENTO
 # =========================
-st.subheader("Faturamento por Mês")
+st.subheader("📈 Evolução do Faturamento")
 
 df_fat = faturamento_por_mes(dados, ano)
 
-fig, ax = plt.subplots()
-ax.bar(df_fat["mes"], df_fat["faturamento"])
-ax.set_title("Faturamento Mensal")
+fig_fat = px.bar(
+    df_fat,
+    x="mes",
+    y="faturamento",
+    text="faturamento",
+)
 
-st.pyplot(fig)
+fig_fat.update_traces(
+    texttemplate="R$ %{text:,.0f}",
+    textposition="outside"
+)
+
+fig_fat.update_layout(
+    xaxis_title="Mês",
+    yaxis_title="Faturamento",
+    title="Faturamento Mensal"
+)
 
 # =========================
-# TOP PRODUTOS
+# FATURAMENTO DIÁRIO
 # =========================
-st.subheader("Top Produtos")
+df_dia = dados["base_fat"]
+df_dia = df_dia[
+    (df_dia["ano"] == ano) &
+    (df_dia["mes"] == mes)
+]
 
-df_prod = top_produtos(dados, ano)
+df_dia = df_dia.groupby(df_dia["data"].dt.day)["faturamento"].sum().reset_index()
 
-st.dataframe(df_prod.head(10))
+fig_dia = px.line(
+    df_dia,
+    x="data",
+    y="faturamento",
+    markers=True,
+    title="Faturamento Diário"
+)
+
+# 👉 AQUI usamos colunas (layout profissional)
+col1, col2 = st.columns(2)
+
+with col1:
+    st.plotly_chart(fig_fat, use_container_width=True)
+
+with col2:
+    st.plotly_chart(fig_dia, use_container_width=True)
+
+st.markdown("---")
+
+# =========================
+# 🏆 SEÇÃO 2 — PRODUTOS
+# =========================
+st.subheader("🏆 Performance de Produtos")
+
+df_prod = top_produtos(dados, ano).head(10)
+
+fig_prod = px.bar(
+    df_prod,
+    x="produto",
+    y="qtd",
+    text="qtd",
+    title="Top 10 Produtos"
+)
+
+fig_prod.update_traces(textposition="outside")
+
+st.plotly_chart(fig_prod, use_container_width=True)
+
+st.markdown("---")
+
+# =========================
+# ⚠️ SEÇÃO 3 — PERDAS
+# =========================
+st.subheader("⚠️ Análise de Perdas")
+
+df_perdas = dados["base_perdas"]
+df_perdas = df_perdas[
+    (df_perdas["data"].dt.year == ano) &
+    (df_perdas["data"].dt.month == mes)
+]
+
+df_perdas = df_perdas.groupby("motivo")["qtd"].count().reset_index()
+
+fig_perdas = px.pie(
+    df_perdas,
+    names="motivo",
+    values="qtd",
+    title="Distribuição de Perdas"
+)
+
+st.plotly_chart(fig_perdas, use_container_width=True)
