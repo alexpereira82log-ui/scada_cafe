@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import io
+from datetime import datetime
 
 from database.connection import carregar_dados
 from utils.tratamento import tratar_dados
@@ -18,8 +19,6 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Dashboard Scada Café")
-st.markdown("---")
 
 # =========================
 # CARREGAR DADOS
@@ -27,15 +26,45 @@ st.markdown("---")
 dados = carregar_dados()
 dados = tratar_dados(dados)
 
+
+hoje = datetime.today()
+ano_atual = hoje.year
+mes_atual = hoje.month
+
 # =========================
 # FILTROS
 # =========================
 st.sidebar.header("Filtros")
 
 anos = sorted(dados["base_fat"]["ano"].dropna().unique())
-ano = st.sidebar.selectbox("Ano", anos)
+ano = st.sidebar.selectbox(
+    "Ano",
+    anos,
+    index=anos.index(ano_atual) if ano_atual in anos else 0
+)
 
-mes = st.sidebar.selectbox("Mês", list(range(1, 13)))
+lista_meses = list(range(1, 13))
+
+meses_dict = {
+    1: "Janeiro", 2: "Fevereiro", 3: "Março",
+    4: "Abril", 5: "Maio", 6: "Junho",
+    7: "Julho", 8: "Agosto", 9: "Setembro",
+    10: "Outubro", 11: "Novembro", 12: "Dezembro"
+}
+
+lista_meses_nomes = list(meses_dict.values())
+
+mes_nome = st.sidebar.selectbox(
+    "Mês",
+    lista_meses_nomes,
+    index=mes_atual - 1
+)
+
+# Converter nome do mês para número
+mes = [k for k, v in meses_dict.items() if v == mes_nome][0]
+
+st.title(f"📊 Dashboard Scada Café - {mes_nome} {ano}")
+st.markdown("---")
 
 # =========================
 # FILTROS AVANÇADOS
@@ -139,6 +168,20 @@ with tab2:
 
     df_fat = faturamento_por_mes(dados, ano)
 
+    # Drill Down
+    st.markdown("### 🔎 Drill-down por mês")
+
+    meses_disponiveis = df_fat["mes"].tolist()
+
+    mes_selecionado = st.selectbox(
+        "Selecione um mês para análise detalhada",
+        meses_disponiveis,
+        index=meses_disponiveis.index(mes) if mes in meses_disponiveis else 0
+    )
+
+    mes = mes_selecionado
+
+    #Gráfico
     fig_fat = px.bar(
         df_fat,
         x="mes",
@@ -153,7 +196,7 @@ with tab2:
 
     df_dia = df_dia[
         (df_dia["ano"] == ano) &
-        (df_dia["mes"] == mes)
+        (df_dia["mes"] == mes_selecionado)
     ]
 
     # Filtro equipe
@@ -188,7 +231,7 @@ with tab2:
 
     st.download_button(
         label="📥 Baixar Faturamento",
-        data=buffer,
+        data=buffer_fat,
         file_name="faturamento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
@@ -236,7 +279,7 @@ with tab3:
 
     st.download_button(
         label="📥 Baixar Excel",
-        data=buffer,
+        data=buffer_prod,
         file_name="produtos.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
