@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import io
 
 from database.connection import carregar_dados
 from utils.tratamento import tratar_dados
@@ -177,6 +178,22 @@ with tab2:
         st.plotly_chart(fig_dia, use_container_width=True)
 
 
+    st.markdown("### 📋 Dados de Faturamento")
+
+    st.dataframe(df_dia, use_container_width=True)
+
+    buffer_fat = io.BytesIO()
+    df_dia.to_excel(buffer_fat, index=False)
+    buffer_fat.seek(0)
+
+    st.download_button(
+        label="📥 Baixar Faturamento",
+        data=buffer,
+        file_name="faturamento.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
 # ======================================================
 # 🏆 PRODUTOS
 # ======================================================
@@ -204,6 +221,26 @@ with tab3:
 
     st.plotly_chart(fig_prod, use_container_width=True)
 
+    st.markdown("### 📋 Dados detalhados")
+
+    st.dataframe(
+        df_prod,
+        use_container_width=True
+    )
+
+
+    # Converter para Excel em memória
+    buffer_prod = io.BytesIO()
+    df_prod.to_excel(buffer_prod, index=False)
+    buffer_prod.seek(0)
+
+    st.download_button(
+        label="📥 Baixar Excel",
+        data=buffer,
+        file_name="produtos.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
 # ======================================================
 # ⚠️ PERDAS
@@ -228,3 +265,7 @@ with tab4:
     )
 
     st.plotly_chart(fig_perdas, use_container_width=True)
+
+    st.markdown("### 📋 Dados de Perdas")
+
+    st.dataframe(df_perdas, use_container_width=True)
