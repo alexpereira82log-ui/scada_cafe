@@ -15,4 +15,3 @@ if __name__ == "__main__":
 
     iniciar_menu(dados, ano, mes, metricas)
 
-    #Teste
