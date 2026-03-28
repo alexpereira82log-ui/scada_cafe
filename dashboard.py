@@ -98,7 +98,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # ======================================================
 with tab1:
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric("Faturamento", f"R$ {metricas['total_fat']:,.2f}")
     col2.metric("Meta", f"R$ {metricas['meta']:,.2f}")
@@ -111,6 +111,11 @@ with tab1:
     )
 
     col4.metric("Ticket Médio", f"R$ {metricas['ticket_medio']:,.2f}")
+
+    col5.metric(
+       "Média Cupons",
+        f"{metricas['media_cupons']:.0f}"
+    )
 
     # Gauge + comparação
     col1, col2 = st.columns(2)
