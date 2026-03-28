@@ -38,32 +38,17 @@ meses = list(range(1, 13))
 mes = st.sidebar.selectbox("Selecione o Mês", meses)
 
 # =========================
-# MÉTRICAS (KPIs)
-# =========================
-metricas = calcular_metricas(dados, ano, mes)
-
-col1, col2, col3, col4 = st.columns(4)
-
-# =========================
 # MÉTRICAS (KPIs EXECUTIVOS)
 # =========================
 metricas = calcular_metricas(dados, ano, mes)
 
 atingiu_meta = metricas["perc_meta"] >= 1
-
 cor_meta = "normal" if atingiu_meta else "inverse"
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric(
-    "Faturamento",
-    f"R$ {metricas['total_fat']:,.2f}"
-)
-
-col2.metric(
-    "Meta",
-    f"R$ {metricas['meta']:,.2f}"
-)
+col1.metric("Faturamento", f"R$ {metricas['total_fat']:,.2f}")
+col2.metric("Meta", f"R$ {metricas['meta']:,.2f}")
 
 col3.metric(
     "% Meta",
@@ -72,56 +57,50 @@ col3.metric(
     delta_color=cor_meta
 )
 
-col4.metric(
-    "Ticket Médio",
-    f"R$ {metricas['ticket_medio']:,.2f}"
-)
-
-st.markdown("---")
-
+col4.metric("Ticket Médio", f"R$ {metricas['ticket_medio']:,.2f}")
 
 # =========================
-# GAUGE DE META
+# GAUGE + COMPARAÇÃO (LADO A LADO)
 # =========================
-st.subheader("🎯 Atingimento da Meta")
+col1, col2 = st.columns(2)
 
-fig_gauge = go.Figure(go.Indicator(
-    mode="gauge+number",
-    value=metricas["perc_meta"] * 100,
-    title={'text': "Percentual da Meta (%)"},
-    gauge={
-        'axis': {'range': [0, 150]},
-        'bar': {'color': "green" if metricas["perc_meta"] >= 1 else "red"},
-        'steps': [
-            {'range': [0, 100], 'color': "lightcoral"},
-            {'range': [100, 150], 'color': "lightgreen"},
-        ],
-    }
-))
+# 🔹 Gauge
+with col1:
+    st.subheader("🎯 Atingimento da Meta")
 
-st.plotly_chart(fig_gauge, use_container_width=True)
+    fig_gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=metricas["perc_meta"] * 100,
+        title={'text': "Meta (%)"},
+        gauge={
+            'axis': {'range': [0, 150]},
+            'bar': {'color': "green" if atingiu_meta else "red"},
+            'steps': [
+                {'range': [0, 100], 'color': "lightcoral"},
+                {'range': [100, 150], 'color': "lightgreen"},
+            ],
+        }
+    ))
 
+    st.plotly_chart(fig_gauge, use_container_width=True)
+
+# 🔹 Comparação mês anterior
+with col2:
+    st.subheader("📊 Comparação Mensal")
+
+    mes_anterior = mes - 1 if mes > 1 else 12
+    metricas_ant = calcular_metricas(dados, ano, mes_anterior)
+
+    delta_fat = metricas["total_fat"] - metricas_ant["total_fat"]
+
+    st.metric(
+        "Faturamento Atual",
+        f"R$ {metricas['total_fat']:,.2f}",
+        delta=f"{delta_fat:,.2f}"
+    )
 
 # =========================
-# Comparação com mês anterior
-# =========================
-st.subheader("📊 Comparação com Mês Anterior")
-
-mes_anterior = mes - 1 if mes > 1 else 12
-
-metricas_ant = calcular_metricas(dados, ano, mes_anterior)
-
-delta_fat = metricas["total_fat"] - metricas_ant["total_fat"]
-
-st.metric(
-    "Variação de Faturamento",
-    f"R$ {metricas['total_fat']:,.2f}",
-    delta=f"{delta_fat:,.2f}"
-)
-
-
-# =========================
-# Destaque automático (insight)
+# INSIGHT AUTOMÁTICO
 # =========================
 st.markdown("### 🔍 Insight automático")
 
@@ -132,9 +111,10 @@ elif metricas["perc_meta"] >= 0.9:
 else:
     st.error("Abaixo da meta. Necessário plano de ação.")
 
+st.markdown("---")
 
 # =========================
-# 📈 SEÇÃO 1 — FATURAMENTO
+# 📈 FATURAMENTO
 # =========================
 st.subheader("📈 Evolução do Faturamento")
 
@@ -145,17 +125,12 @@ fig_fat = px.bar(
     x="mes",
     y="faturamento",
     text="faturamento",
+    title="Faturamento Mensal"
 )
 
 fig_fat.update_traces(
     texttemplate="R$ %{text:,.0f}",
     textposition="outside"
-)
-
-fig_fat.update_layout(
-    xaxis_title="Mês",
-    yaxis_title="Faturamento",
-    title="Faturamento Mensal"
 )
 
 # =========================
@@ -177,7 +152,7 @@ fig_dia = px.line(
     title="Faturamento Diário"
 )
 
-# 👉 AQUI usamos colunas (layout profissional)
+# 🔹 Layout lado a lado
 col1, col2 = st.columns(2)
 
 with col1:
@@ -189,7 +164,7 @@ with col2:
 st.markdown("---")
 
 # =========================
-# 🏆 SEÇÃO 2 — PRODUTOS
+# 🏆 PRODUTOS
 # =========================
 st.subheader("🏆 Performance de Produtos")
 
@@ -204,14 +179,14 @@ fig_prod = px.bar(
     title="Top Produtos"
 )
 
-fig_prod.update_layout(yaxis={'categoryorder':'total ascending'})
+fig_prod.update_layout(yaxis={'categoryorder': 'total ascending'})
 
 st.plotly_chart(fig_prod, use_container_width=True)
 
 st.markdown("---")
 
 # =========================
-# ⚠️ SEÇÃO 3 — PERDAS
+# ⚠️ PERDAS
 # =========================
 st.subheader("⚠️ Análise de Perdas")
 
