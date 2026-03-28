@@ -14,3 +14,5 @@ if __name__ == "__main__":
     metricas = calcular_metricas(dados, ano, mes)
 
     iniciar_menu(dados, ano, mes, metricas)
+
+    #Teste
