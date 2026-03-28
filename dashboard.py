@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 from database.connection import carregar_dados
 from utils.tratamento import tratar_dados
-from services.analises import faturamento_por_mes, top_produtos
+from services.analises import faturamento_por_mes
 from services.calculos import calcular_metricas
 
 
@@ -32,20 +32,29 @@ dados = tratar_dados(dados)
 st.sidebar.header("Filtros")
 
 anos = sorted(dados["base_fat"]["ano"].dropna().unique())
-ano = st.sidebar.selectbox("Selecione o Ano", anos)
+ano = st.sidebar.selectbox("Ano", anos)
 
-meses = list(range(1, 13))
-mes = st.sidebar.selectbox("Selecione o Mês", meses)
+mes = st.sidebar.selectbox("Mês", list(range(1, 13)))
 
 # =========================
-# MÉTRICAS (USADA EM TODAS AS ABAS)
+# FILTROS AVANÇADOS
+# =========================
+produtos = dados["base_produtos"]["produto"].dropna().unique()
+produto_sel = st.sidebar.selectbox("Produto", ["Todos"] + list(produtos))
+
+equipes = dados["base_fat"]["equipe"].dropna().unique()
+equipe_sel = st.sidebar.selectbox("Equipe", ["Todas"] + list(equipes))
+
+# =========================
+# MÉTRICAS
 # =========================
 metricas = calcular_metricas(dados, ano, mes)
+
 atingiu_meta = metricas["perc_meta"] >= 1
 cor_meta = "normal" if atingiu_meta else "inverse"
 
 # =========================
-# CRIAR ABAS
+# ABAS
 # =========================
 tab1, tab2, tab3, tab4 = st.tabs([
     "📊 Visão Geral",
@@ -55,7 +64,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 ])
 
 # ======================================================
-# 📊 ABA 1 — VISÃO GERAL
+# 📊 VISÃO GERAL
 # ======================================================
 with tab1:
 
@@ -98,15 +107,15 @@ with tab1:
     with col2:
         st.subheader("📊 Comparação Mensal")
 
-        mes_anterior = mes - 1 if mes > 1 else 12
-        metricas_ant = calcular_metricas(dados, ano, mes_anterior)
+        mes_ant = mes - 1 if mes > 1 else 12
+        metricas_ant = calcular_metricas(dados, ano, mes_ant)
 
-        delta_fat = metricas["total_fat"] - metricas_ant["total_fat"]
+        delta = metricas["total_fat"] - metricas_ant["total_fat"]
 
         st.metric(
             "Faturamento Atual",
             f"R$ {metricas['total_fat']:,.2f}",
-            delta=f"{delta_fat:,.2f}"
+            delta=f"{delta:,.2f}"
         )
 
     # Insight
@@ -115,13 +124,13 @@ with tab1:
     if metricas["perc_meta"] >= 1:
         st.success("Meta atingida! Excelente performance.")
     elif metricas["perc_meta"] >= 0.9:
-        st.warning("Próximo da meta. Pequeno ajuste pode bater o objetivo.")
+        st.warning("Próximo da meta.")
     else:
-        st.error("Abaixo da meta. Necessário plano de ação")
+        st.error("Abaixo da meta. Atenção necessária.")
 
 
 # ======================================================
-# 📈 ABA 2 — FATURAMENTO
+# 📈 FATURAMENTO
 # ======================================================
 with tab2:
 
@@ -133,21 +142,22 @@ with tab2:
         df_fat,
         x="mes",
         y="faturamento",
-        text="faturamento",
-        title="Faturamento Mensal"
+        text="faturamento"
     )
 
-    fig_fat.update_traces(
-        texttemplate="R$ %{text:,.0f}",
-        textposition="outside"
-    )
+    fig_fat.update_traces(texttemplate="R$ %{text:,.0f}")
 
-    # Faturamento diário
-    df_dia = dados["base_fat"]
+    # Filtro base
+    df_dia = dados["base_fat"].copy()
+
     df_dia = df_dia[
         (df_dia["ano"] == ano) &
         (df_dia["mes"] == mes)
     ]
+
+    # Filtro equipe
+    if equipe_sel != "Todas":
+        df_dia = df_dia[df_dia["equipe"] == equipe_sel]
 
     df_dia = df_dia.groupby(df_dia["data"].dt.day)["faturamento"].sum().reset_index()
 
@@ -155,8 +165,7 @@ with tab2:
         df_dia,
         x="data",
         y="faturamento",
-        markers=True,
-        title="Faturamento Diário"
+        markers=True
     )
 
     col1, col2 = st.columns(2)
@@ -169,36 +178,42 @@ with tab2:
 
 
 # ======================================================
-# 🏆 ABA 3 — PRODUTOS
+# 🏆 PRODUTOS
 # ======================================================
 with tab3:
 
-    st.subheader("🏆 Performance de Produtos")
+    st.subheader("🏆 Produtos")
 
-    df_prod = top_produtos(dados, ano).head(10)
+    df_prod = dados["base_produtos"].copy()
+
+    df_prod = df_prod[df_prod["ano"] == ano]
+
+    if produto_sel != "Todos":
+        df_prod = df_prod[df_prod["produto"] == produto_sel]
+
+    df_prod = df_prod.groupby("produto")["qtd"].sum().reset_index()
+    df_prod = df_prod.sort_values("qtd", ascending=False).head(10)
 
     fig_prod = px.bar(
         df_prod,
         x="qtd",
         y="produto",
         orientation="h",
-        text="qtd",
-        title="Top Produtos"
+        text="qtd"
     )
-
-    fig_prod.update_layout(yaxis={'categoryorder': 'total ascending'})
 
     st.plotly_chart(fig_prod, use_container_width=True)
 
 
 # ======================================================
-# ⚠️ ABA 4 — PERDAS
+# ⚠️ PERDAS
 # ======================================================
 with tab4:
 
-    st.subheader("⚠️ Análise de Perdas")
+    st.subheader("⚠️ Perdas")
 
-    df_perdas = dados["base_perdas"]
+    df_perdas = dados["base_perdas"].copy()
+
     df_perdas = df_perdas[
         (df_perdas["data"].dt.year == ano) &
         (df_perdas["data"].dt.month == mes)
@@ -209,8 +224,7 @@ with tab4:
     fig_perdas = px.pie(
         df_perdas,
         names="motivo",
-        values="qtd",
-        title="Distribuição de Perdas"
+        values="qtd"
     )
 
     st.plotly_chart(fig_perdas, use_container_width=True)
