@@ -1,15 +1,16 @@
 from menu.menu import iniciar_menu
 from data.loader import carregar_dados
+from data.tratamento import tratar_dados
+from services.calculos import calcular_metricas
 
 
 if __name__ == "__main__":
     dados = carregar_dados()
+    dados = tratar_dados(dados)
 
-    # Teste simples
-    print("Tabelas carregadas:")
-    for nome, df in dados.items():
-        print(f"{nome}: {df.shape}")
+    ano = int(input("Digite o Ano: "))
+    mes = int(input("Digite o Mês: "))
 
-    input("\nPressione ENTER para iniciar o sistema...")
+    metricas = calcular_metricas(dados, ano, mes)
 
-    iniciar_menu()
+    iniciar_menu(dados, ano, mes, metricas)

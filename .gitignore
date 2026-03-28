@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.env
+faturamento_scada.db
+senha_email.py
