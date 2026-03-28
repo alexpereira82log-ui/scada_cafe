@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 from database.connection import carregar_dados
 from utils.tratamento import tratar_dados
@@ -43,12 +44,94 @@ metricas = calcular_metricas(dados, ano, mes)
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Faturamento", f"R$ {metricas['total_fat']:,.2f}")
-col2.metric("Meta", f"R$ {metricas['meta']:,.2f}")
-col3.metric("% Meta", f"{metricas['perc_meta']:.0%}")
-col4.metric("Ticket Médio", f"R$ {metricas['ticket_medio']:,.2f}")
+# =========================
+# MÉTRICAS (KPIs EXECUTIVOS)
+# =========================
+metricas = calcular_metricas(dados, ano, mes)
+
+atingiu_meta = metricas["perc_meta"] >= 1
+
+cor_meta = "normal" if atingiu_meta else "inverse"
+
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric(
+    "Faturamento",
+    f"R$ {metricas['total_fat']:,.2f}"
+)
+
+col2.metric(
+    "Meta",
+    f"R$ {metricas['meta']:,.2f}"
+)
+
+col3.metric(
+    "% Meta",
+    f"{metricas['perc_meta']:.0%}",
+    delta="Meta atingida" if atingiu_meta else "Abaixo da meta",
+    delta_color=cor_meta
+)
+
+col4.metric(
+    "Ticket Médio",
+    f"R$ {metricas['ticket_medio']:,.2f}"
+)
 
 st.markdown("---")
+
+
+# =========================
+# GAUGE DE META
+# =========================
+st.subheader("🎯 Atingimento da Meta")
+
+fig_gauge = go.Figure(go.Indicator(
+    mode="gauge+number",
+    value=metricas["perc_meta"] * 100,
+    title={'text': "Percentual da Meta (%)"},
+    gauge={
+        'axis': {'range': [0, 150]},
+        'bar': {'color': "green" if metricas["perc_meta"] >= 1 else "red"},
+        'steps': [
+            {'range': [0, 100], 'color': "lightcoral"},
+            {'range': [100, 150], 'color': "lightgreen"},
+        ],
+    }
+))
+
+st.plotly_chart(fig_gauge, use_container_width=True)
+
+
+# =========================
+# Comparação com mês anterior
+# =========================
+st.subheader("📊 Comparação com Mês Anterior")
+
+mes_anterior = mes - 1 if mes > 1 else 12
+
+metricas_ant = calcular_metricas(dados, ano, mes_anterior)
+
+delta_fat = metricas["total_fat"] - metricas_ant["total_fat"]
+
+st.metric(
+    "Variação de Faturamento",
+    f"R$ {metricas['total_fat']:,.2f}",
+    delta=f"{delta_fat:,.2f}"
+)
+
+
+# =========================
+# Destaque automático (insight)
+# =========================
+st.markdown("### 🔍 Insight automático")
+
+if metricas["perc_meta"] >= 1:
+    st.success("Meta atingida! Excelente performance.")
+elif metricas["perc_meta"] >= 0.9:
+    st.warning("Próximo da meta. Pequeno ajuste pode bater o objetivo.")
+else:
+    st.error("Abaixo da meta. Necessário plano de ação.")
+
 
 # =========================
 # 📈 SEÇÃO 1 — FATURAMENTO
@@ -114,13 +197,14 @@ df_prod = top_produtos(dados, ano).head(10)
 
 fig_prod = px.bar(
     df_prod,
-    x="produto",
-    y="qtd",
+    x="qtd",
+    y="produto",
+    orientation="h",
     text="qtd",
-    title="Top 10 Produtos"
+    title="Top Produtos"
 )
 
-fig_prod.update_traces(textposition="outside")
+fig_prod.update_layout(yaxis={'categoryorder':'total ascending'})
 
 st.plotly_chart(fig_prod, use_container_width=True)
 
