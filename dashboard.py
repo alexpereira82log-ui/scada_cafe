@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import io
 from datetime import datetime
 
-from database.connection import carregar_dados
+from data.loader import carregar_dados
 from utils.tratamento import tratar_dados
 from services.analises import faturamento_por_mes
 from services.calculos import calcular_metricas

@@ -1,7 +1,6 @@
 import pandas as pd
 from database.connection import get_connection
 
-
 def carregar_dados():
     """
     Carrega todas as tabelas do banco e retorna um dicionário de DataFrames.
