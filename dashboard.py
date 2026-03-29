@@ -86,12 +86,14 @@ cor_meta = "normal" if atingiu_meta else "inverse"
 # =========================
 # ABAS
 # =========================
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📊 Visão Geral",
     "📈 Faturamento",
+    "📌 Projeções",
+    "⚠️ Perdas",
     "🏆 Produtos",
-    "⚠️ Perdas"
 ])
+
 
 # ======================================================
 # 📊 VISÃO GERAL
@@ -173,6 +175,14 @@ with tab2:
 
     df_fat = faturamento_por_mes(dados, ano)
 
+    meses_dict = {
+        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
+        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
+        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+    }
+
+    df_fat["mes_nome"] = df_fat["mes"].map(meses_dict)
+
     # Drill Down
     st.markdown("### 🔎 Drill-down por mês")
 
@@ -184,12 +194,10 @@ with tab2:
         index=meses_disponiveis.index(mes) if mes in meses_disponiveis else 0
     )
 
-    mes = mes_selecionado
-
     #Gráfico
     fig_fat = px.bar(
         df_fat,
-        x="mes",
+        x="mes_nome",
         y="faturamento",
         text="faturamento"
     )
@@ -208,13 +216,32 @@ with tab2:
     if equipe_sel != "Todas":
         df_dia = df_dia[df_dia["equipe"] == equipe_sel]
 
-    df_dia = df_dia.groupby(df_dia["data"].dt.day)["faturamento"].sum().reset_index()
+    df_dia = (
+        df_dia
+        .groupby(df_dia["data"].dt.day)
+        .agg({
+            "faturamento": "sum",
+            "ticket_medio": "mean",
+            "cupom": "sum"
+        })
+        .reset_index()
+    )
+
+    # Remover dias com faturamento zero (dias futuros)
+    df_dia = df_dia[df_dia["faturamento"] > 0]
 
     fig_dia = px.line(
         df_dia,
         x="data",
         y="faturamento",
         markers=True
+    )
+
+    fig_dia.update_layout(
+        xaxis=dict(
+            tickmode="linear",
+            dtick=1
+        )
     )
 
     col1, col2 = st.columns(2)
@@ -243,9 +270,145 @@ with tab2:
 
 
 # ======================================================
-# 🏆 PRODUTOS
+# 📌 PROJEÇÕES
 # ======================================================
 with tab3:
+
+    st.subheader("📌 Projeções de Meta")
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    col1.metric(
+        "Meta do Mês",
+        f"R$ {metricas['meta']:,.2f}"
+    )
+
+    col2.metric(
+        "Projeção Faturamento",
+        f"R$ {metricas['proj_fat']:,.2f}"
+    )
+
+    col3.metric(
+        "Faturamento Diário Necessário",
+        f"R$ {metricas['fat_dia_necessario']:,.2f}"
+    )
+
+    col4.metric(
+        "Ticket Médio Necessário",
+        f"R$ {metricas['ticket_necessario']:,.2f}"
+    )
+
+    col5.metric(
+        "Dias Restantes",
+        f"{metricas['dias_restantes']}"
+    )
+
+    st.markdown("---")
+
+    # Insight automático
+    if metricas["proj_fat"] >= metricas["meta"]:
+        st.success("Mantendo o ritmo atual, a meta será atingida.")
+    else:
+        st.error("No ritmo atual, a meta NÃO será atingida.")
+
+    # GRÁFICOS
+    st.markdown("### 📈 Ticket Médio x Cupons por Dia")
+
+    df_plot = dados["base_fat"].copy()
+
+    df_plot = df_plot[
+        (df_plot["ano"] == ano) &
+        (df_plot["mes"] == mes)
+    ]
+
+    # Ticket médio por dia
+    ticket_dia = (
+        df_plot.groupby(df_plot["data"].dt.day)["ticket_medio"]
+        .mean()
+        .reset_index()
+    )
+
+    # Cupons por dia
+    cupons_dia = (
+        df_plot.groupby(df_plot["data"].dt.day)["cupom"]
+        .sum()
+        .reset_index()
+    )
+
+    # Criar figura
+    fig = go.Figure()
+
+    # Linha 1 - Ticket médio
+    fig.add_trace(
+        go.Scatter(
+            x=ticket_dia["data"],
+            y=ticket_dia["ticket_medio"],
+            mode="lines+markers",
+            name="Ticket Médio",
+            yaxis="y1"
+        )
+    )
+
+    # Linha 2 - Cupons
+    fig.add_trace(
+        go.Scatter(
+            x=cupons_dia["data"],
+            y=cupons_dia["cupom"],
+            mode="lines+markers",
+            name="Cupons",
+            yaxis="y2"
+        )
+    )
+
+    # Layout com dois eixos
+    fig.update_layout(
+        yaxis=dict(title="Ticket Médio"),
+        yaxis2=dict(
+            title="Cupons",
+            overlaying="y",
+            side="right"
+        ),
+        xaxis=dict(title="Dia do Mês"),
+        legend=dict(x=0.01, y=0.99),
+        height=400
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# ======================================================
+# ⚠️ PERDAS
+# ======================================================
+with tab4:
+
+    st.subheader("⚠️ Perdas")
+
+    df_perdas = dados["base_perdas"].copy()
+
+    df_perdas = df_perdas[
+        (df_perdas["data"].dt.year == ano) &
+        (df_perdas["data"].dt.month == mes)
+    ]
+
+    df_perdas = df_perdas.groupby("motivo")["qtd"].count().reset_index()
+
+    fig_perdas = px.pie(
+        df_perdas,
+        names="motivo",
+        values="qtd"
+    )
+
+    st.plotly_chart(fig_perdas, use_container_width=True)
+
+    st.markdown("### 📋 Dados de Perdas")
+
+    st.dataframe(df_perdas, use_container_width=True)
+
+
+# ======================================================
+# 🏆 PRODUTOS
+# ======================================================
+with tab5:
 
     st.subheader("🏆 Produtos")
 
@@ -289,31 +452,3 @@ with tab3:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-
-# ======================================================
-# ⚠️ PERDAS
-# ======================================================
-with tab4:
-
-    st.subheader("⚠️ Perdas")
-
-    df_perdas = dados["base_perdas"].copy()
-
-    df_perdas = df_perdas[
-        (df_perdas["data"].dt.year == ano) &
-        (df_perdas["data"].dt.month == mes)
-    ]
-
-    df_perdas = df_perdas.groupby("motivo")["qtd"].count().reset_index()
-
-    fig_perdas = px.pie(
-        df_perdas,
-        names="motivo",
-        values="qtd"
-    )
-
-    st.plotly_chart(fig_perdas, use_container_width=True)
-
-    st.markdown("### 📋 Dados de Perdas")
-
-    st.dataframe(df_perdas, use_container_width=True)

@@ -1,56 +1,105 @@
 import pandas as pd
+from datetime import datetime
+import calendar
 
 
 def calcular_metricas(dados: dict, ano: int, mes: int) -> dict:
     """
-    Calcula métricas principais para o dashboard.
+    Calcula métricas principais e projeções para o dashboard.
     """
 
-    df = dados["base_fat"]
+    df = dados["base_fat"].copy()
 
     # =========================
-    # FILTRO
+    # FILTRO BASE
     # =========================
-    df_filtrado = df[
+    df_mes = df[
         (df["ano"] == ano) &
         (df["mes"] == mes)
     ]
 
-    # =========================
-    # MÉTRICAS
-    # =========================
-    # Total Faturamento
-    total_fat = df_filtrado["faturamento"].sum()
+    # Segurança
+    if df_mes.empty:
+        return {
+            "total_fat": 0,
+            "meta": 0,
+            "perc_meta": 0,
+            "ticket_medio": 0,
+            "media_cupons": 0,
+            "proj_fat": 0,
+            "fat_dia_necessario": 0,
+            "ticket_necessario": 0
+        }
 
-    # Meta atual
-    meta = df_filtrado["meta"].sum(min_count=1)
+    # =========================
+    # MÉTRICAS BASE
+    # =========================
+    total_fat = df_mes["faturamento"].sum()
+
+    meta = df_mes["meta"].sum(min_count=1)
     meta = 0 if pd.isna(meta) else float(meta)
 
-    # Percentual atingido da meta
+    total_cupons = df_mes["cupom"].sum()
+
+    ticket_medio = total_fat / total_cupons if total_cupons != 0 else 0
+
     perc_meta = (total_fat / meta) if meta != 0 else 0
 
-    # Ticket Médio
-    ticket_medio = (
-        df_filtrado["faturamento"].sum() /
-        df_filtrado["cupom"].sum()
-        if df_filtrado["cupom"].sum() != 0 else 0
+    media_cupons = df_mes["cupom"].mean()
+
+    # =========================
+    # MÉTRICAS AUXILIARES
+    # =========================
+    media_fat_dia = (
+        df_mes
+        .groupby(df_mes["data"].dt.day)["faturamento"]
+        .sum()
+        .mean()
     )
 
-    # Média de cupons por dia
-    df_cupom = dados["base_fat"].copy()
+    # =========================
+    # PROJEÇÕES
+    # =========================
+    hoje = datetime.today()
 
-    df_cupom = df_cupom[
-        (df_cupom["ano"] == ano) &
-        (df_cupom["mes"] == mes)
-    ]
+    if ano == hoje.year and mes == hoje.month:
+        ultimo_dia = calendar.monthrange(ano, mes)[1]
+        dias_restantes = ultimo_dia - hoje.day
+    else:
+        dias_restantes = 0
 
-    media_cupons = df_cupom["cupom"].mean() if not df_cupom.empty else 0
+    # Garantir não negativo
+    dias_restantes = max(dias_restantes, 0)
 
-    # Return da função:
+    # Projeção faturamento
+    proj_fat = total_fat + (media_fat_dia * dias_restantes)
+
+    # Diferença para meta
+    falta_meta = meta - total_fat
+
+    # Faturamento diário necessário
+    fat_dia_necessario = (
+        falta_meta / dias_restantes
+        if dias_restantes > 0 else 0
+    )
+
+    # Ticket necessário
+    ticket_necessario = (
+        fat_dia_necessario / media_cupons
+        if media_cupons > 0 else 0
+    )
+
+    # =========================
+    # RETURN
+    # =========================
     return {
         "total_fat": float(total_fat),
         "meta": float(meta),
         "perc_meta": float(perc_meta),
         "ticket_medio": float(ticket_medio),
-        "media_cupons": int(media_cupons)
+        "media_cupons": float(media_cupons),
+        "proj_fat": float(proj_fat),
+        "fat_dia_necessario": float(fat_dia_necessario),
+        "ticket_necessario": float(ticket_necessario),
+        "dias_restantes": int(dias_restantes),
     }
