@@ -404,6 +404,49 @@ with tab4:
 
     st.dataframe(df_perdas, use_container_width=True)
 
+    st.markdown("### 📈 Evolução de Perdas no Ano")
+
+    # Dados Mês a Mês
+    df_perdas_ano = dados["base_perdas"].copy()
+
+    df_perdas_ano = df_perdas_ano[
+        df_perdas_ano["data"].dt.year == ano
+    ]
+
+    df_perdas_ano = (
+        df_perdas_ano
+        .groupby(df_perdas_ano["data"].dt.month)["qtd"]
+        .count()
+        .reset_index()
+    )
+
+    df_perdas_ano.rename(columns={"data": "mes"}, inplace=True)
+
+    # Nome dos meses
+    meses_dict = {
+        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
+        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
+        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+    }
+
+    df_perdas_ano["mes_nome"] = df_perdas_ano["mes"].map(meses_dict)
+
+    # Gráfico
+    fig_perdas_mes = px.line(
+        df_perdas_ano,
+        x="mes_nome",
+        y="qtd",
+        markers=True,
+        title="Perdas por Mês"
+    )
+
+    fig_perdas_mes.update_layout(
+        xaxis_title="Mês",
+        yaxis_title="Quantidade de Perdas"
+    )
+
+    st.plotly_chart(fig_perdas_mes, use_container_width=True)
+
 
 # ======================================================
 # 🏆 PRODUTOS
