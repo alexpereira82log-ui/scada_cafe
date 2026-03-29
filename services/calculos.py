@@ -28,7 +28,8 @@ def calcular_metricas(dados: dict, ano: int, mes: int) -> dict:
             "media_cupons": 0,
             "proj_fat": 0,
             "fat_dia_necessario": 0,
-            "ticket_necessario": 0
+            "ticket_necessario": 0,
+            "dias_restantes": 0
         }
 
     # =========================
@@ -68,29 +69,24 @@ def calcular_metricas(dados: dict, ano: int, mes: int) -> dict:
     else:
         dias_restantes = 0
 
-    # Garantir não negativo
     dias_restantes = max(dias_restantes, 0)
 
-    # Projeção faturamento
     proj_fat = total_fat + (media_fat_dia * dias_restantes)
 
-    # Diferença para meta
     falta_meta = meta - total_fat
 
-    # Faturamento diário necessário
     fat_dia_necessario = (
         falta_meta / dias_restantes
         if dias_restantes > 0 else 0
     )
 
-    # Ticket necessário
     ticket_necessario = (
         fat_dia_necessario / media_cupons
         if media_cupons > 0 else 0
     )
 
     # =========================
-    # RETURN
+    # RETURN FINAL
     # =========================
     return {
         "total_fat": float(total_fat),
