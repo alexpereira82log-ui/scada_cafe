@@ -3,12 +3,14 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import io
-from datetime import datetime
+
 
 from data.loader import carregar_dados
 from utils.tratamento import tratar_dados
 from services.analises import faturamento_por_mes
 from services.calculos import calcular_metricas
+from datetime import datetime
+from services.insights import gerar_insights
 
 
 # =========================
@@ -156,14 +158,20 @@ with tab1:
         )
 
     # Insight
-    st.markdown("### 🔍 Insight automático")
+    st.markdown("### 🧠 Insights Inteligentes")
 
-    if metricas["perc_meta"] >= 1:
-        st.success("Meta atingida! Excelente performance.")
-    elif metricas["perc_meta"] >= 0.9:
-        st.warning("Próximo da meta.")
-    else:
-        st.error("Abaixo da meta. Atenção necessária.")
+    insights = gerar_insights(dados, metricas, ano, mes)
+
+    for tipo, _, mensagem in insights:
+
+        if tipo == "sucesso":
+            st.success(mensagem)
+
+        elif tipo == "alerta":
+            st.warning(mensagem)
+
+        elif tipo == "erro":
+            st.error(mensagem)
 
 
 # ======================================================
