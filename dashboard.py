@@ -208,7 +208,9 @@ with tab2:
 
     df_fat["mes_nome"] = df_fat["mes"].map(meses_dict)
 
-    # Drill Down
+    # =========================
+    # DRILL DOWN
+    # =========================
     st.markdown("### 🔎 Drill-down por mês")
 
     meses_disponiveis = df_fat["mes"].tolist()
@@ -219,17 +221,20 @@ with tab2:
         index=meses_disponiveis.index(mes) if mes in meses_disponiveis else 0
     )
 
-    #Gráfico
+    # =========================
+    # GRÁFICOS PRINCIPAIS
+    # =========================
     fig_fat = px.bar(
         df_fat,
         x="mes_nome",
         y="faturamento",
-        text="faturamento"
+        text="faturamento",
+        title="Faturamento Mensal"
     )
 
     fig_fat.update_traces(texttemplate="R$ %{text:,.0f}")
 
-    # Filtro base
+    # Base diária
     df_dia = dados["base_fat"].copy()
 
     df_dia = df_dia[
@@ -237,7 +242,6 @@ with tab2:
         (df_dia["mes"] == mes_selecionado)
     ]
 
-    # Filtro equipe
     if equipe_sel != "Todas":
         df_dia = df_dia[df_dia["equipe"] == equipe_sel]
 
@@ -252,14 +256,14 @@ with tab2:
         .reset_index()
     )
 
-    # Remover dias com faturamento zero (dias futuros)
     df_dia = df_dia[df_dia["faturamento"] > 0]
 
     fig_dia = px.line(
         df_dia,
         x="data",
         y="faturamento",
-        markers=True
+        markers=True,
+        title="Faturamento Diário"
     )
 
     fig_dia.update_layout(
@@ -277,7 +281,9 @@ with tab2:
     with col2:
         st.plotly_chart(fig_dia, use_container_width=True)
 
-
+    # =========================
+    # TABELA
+    # =========================
     st.markdown("### 📋 Dados de Faturamento")
 
     st.dataframe(df_dia, use_container_width=True)
@@ -292,6 +298,74 @@ with tab2:
         file_name="faturamento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+    # =========================
+    # YOY
+    # =========================
+    st.markdown("### 📊 Comparação Ano a Ano (YoY)")
+
+    df_yoy = dados["base_fat"].copy()
+
+    df_yoy = df_yoy[df_yoy["ano"].isin([ano, ano - 1])]
+
+    df_yoy = (
+        df_yoy
+        .groupby([df_yoy["data"].dt.month, "ano"])["faturamento"]
+        .sum()
+        .reset_index()
+    )
+
+    df_yoy.rename(columns={"data": "mes"}, inplace=True)
+
+    df_yoy["mes_nome"] = df_yoy["mes"].map(meses_dict)
+
+    fig_yoy = px.line(
+        df_yoy,
+        x="mes_nome",
+        y="faturamento",
+        color="ano",
+        markers=True,
+        title="Comparação Ano a Ano"
+    )
+
+    st.plotly_chart(fig_yoy, use_container_width=True)
+
+    # =========================
+    # YTD
+    # =========================
+    st.markdown("### 📈 Acumulado no Ano (YTD)")
+
+    df_ytd = dados["base_fat"].copy()
+
+    df_ytd = df_ytd[df_ytd["ano"].isin([ano, ano - 1])]
+
+    df_ytd = (
+        df_ytd
+        .groupby([df_ytd["data"].dt.month, "ano"])["faturamento"]
+        .sum()
+        .reset_index()
+    )
+
+    df_ytd.rename(columns={"data": "mes"}, inplace=True)
+
+    df_ytd = df_ytd[df_ytd["mes"] <= mes]
+
+    df_ytd = df_ytd.sort_values(["ano", "mes"])
+
+    df_ytd["acumulado"] = df_ytd.groupby("ano")["faturamento"].cumsum()
+
+    df_ytd["mes_nome"] = df_ytd["mes"].map(meses_dict)
+
+    fig_ytd = px.line(
+        df_ytd,
+        x="mes_nome",
+        y="acumulado",
+        color="ano",
+        markers=True,
+        title="Faturamento Acumulado (YTD)"
+    )
+
+    st.plotly_chart(fig_ytd, use_container_width=True)
 
 
 # ======================================================
