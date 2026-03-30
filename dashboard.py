@@ -144,18 +144,35 @@ with tab1:
         st.plotly_chart(fig_gauge, use_container_width=True)
 
     with col2:
-        st.subheader("📊 Comparação Mensal")
 
-        mes_ant = mes - 1 if mes > 1 else 12
-        metricas_ant = calcular_metricas(dados, ano, mes_ant)
+        st.subheader("📊 Comparação Anual")
 
-        delta = metricas["total_fat"] - metricas_ant["total_fat"]
+        # Faturamento atual
+        fat_atual = metricas["total_fat"]
+
+        # Faturamento ano anterior (mesmo mês)
+        metricas_ano_ant = calcular_metricas(dados, ano - 1, mes)
+        fat_ano_ant = metricas_ano_ant["total_fat"]
+
+        # Cálculo percentual
+        if fat_ano_ant > 0:
+            crescimento = (fat_atual - fat_ano_ant) / fat_ano_ant
+        else:
+            crescimento = 0
+
+        # Definir cor e texto
+        delta_valor = crescimento  # valor numérico
 
         st.metric(
             "Faturamento Atual",
-            f"R$ {metricas['total_fat']:,.2f}",
-            delta=f"{delta:,.2f}"
+            f"R$ {fat_atual:,.2f}",
+            delta=f"{delta_valor:.1%}",
         )
+
+        # Exibir comparativo
+        st.markdown(f"""
+        📅 Mesmo mês ano anterior: **R$ {fat_ano_ant:,.2f}**
+        """)
 
     # Insight
     st.markdown("### 🧠 Insights Inteligentes")
