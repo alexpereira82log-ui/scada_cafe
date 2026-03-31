@@ -1,9 +1,12 @@
-import sqlite3
+import psycopg2
+
 
 def get_connection():
-    """
-    Retorna conexão com o banco SQLite
-    """
-    caminho_banco = "faturamento_scada.db"
-    return sqlite3.connect(caminho_banco)
-
+    return psycopg2.connect(
+        host="aws-0-us-west-2.pooler.supabase.com",
+        database="postgres",
+        user="postgres.fdepgcrcngsgdsvxfjpi",
+        password="C,9b4zYMyi6Wa?e",
+        port=6543,
+        sslmode="require"
+    )
