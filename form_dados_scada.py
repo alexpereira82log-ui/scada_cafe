@@ -45,52 +45,83 @@ def carregar_dia():
 
     data = entry_data.get()
 
-    cursor.execute("""
-    SELECT comiss_dia FROM comissao_dia
-    WHERE data = %s
-    """,(data,))
+    try:
+        # =========================
+        # COMISSAO DO DIA
+        # =========================
+        cursor.execute("""
+            SELECT comiss_dia 
+            FROM comissao_dia
+            WHERE data = %s
+        """, (data,))
 
-    resultado = cursor.fetchone()
+        resultado = cursor.fetchone()
 
-    if not resultado:
-        messagebox.showinfo("Aviso","Nenhum registro encontrado")
+        if resultado:
+            entry_comissao.delete(0, tk.END)
+            entry_comissao.insert(0, resultado[0])
+        else:
+            entry_comissao.delete(0, tk.END)
+
+        # =========================
+        # PRESENÇA COLABORADORES
+        # =========================
+        cursor.execute("""
+            SELECT colaborador_id, presente
+            FROM comissao_colaborador
+            WHERE data = %s
+        """, (data,))
+
+        presencas = cursor.fetchall()
+
+        # Resetar todos primeiro
+        for var in check_vars.values():
+            var.set(0)
+
+        # Aplicar os que vieram do banco
+        for colab_id, presente in presencas:
+            if colab_id in check_vars:
+                check_vars[colab_id].set(1 if presente else 0)
+
+        # =========================
+        # FATURAMENTO E CUPOM
+        # =========================
+        cursor.execute("""
+            SELECT faturamento, cupom
+            FROM base_fat
+            WHERE data = %s
+        """, (data,))
+
+        fat = cursor.fetchone()
+
+        if fat:
+            entry_faturamento.delete(0, tk.END)
+            entry_faturamento.insert(0, fat[0])
+
+            entry_cupom.delete(0, tk.END)
+            entry_cupom.insert(0, fat[1])
+        else:
+            entry_faturamento.delete(0, tk.END)
+            entry_cupom.delete(0, tk.END)
+
         conn.close()
-        return
 
-    entry_comissao.delete(0,tk.END)
-    entry_comissao.insert(0,resultado[0])
+        # =========================
+        # RECALCULAR RATEIO
+        # =========================
+        calcular_rateio()
 
-    cursor.execute("""
-    SELECT colaborador_id, presente
-    FROM comissao_colaborador
-    WHERE data = %s
-    """,(data,))
+        # =========================
+        # FEEDBACK
+        # =========================
+        if not resultado and not fat:
+            messagebox.showinfo("Aviso", "Nenhum registro encontrado para essa data")
+        else:
+            messagebox.showinfo("Sucesso", "Dados carregados com sucesso")
 
-    presencas = cursor.fetchall()
-
-    for colab_id, presente in presencas:
-        if colab_id in check_vars:
-            check_vars[colab_id].set(presente)
-
-    cursor.execute("""
-    SELECT faturamento, cupom
-    FROM base_fat
-    WHERE data = %s
-    """,(data,))
-
-    fat = cursor.fetchone()
-
-    if fat:
-        entry_faturamento.delete(0,tk.END)
-        entry_faturamento.insert(0,fat[0])
-
-        entry_cupom.delete(0,tk.END)
-        entry_cupom.insert(0,fat[1])
-
-    conn.close()
-
-    calcular_rateio()
-    messagebox.showinfo("Carregado","Dados carregados")
+    except Exception as e:
+        conn.close()
+        messagebox.showerror("Erro", str(e))
 
 # ==========================================================
 # SALVAR
@@ -102,85 +133,98 @@ def salvar():
     cursor = conn.cursor()
 
     data = entry_data.get()
-    comissao = entry_comissao.get()
-    faturamento = entry_faturamento.get()
-    cupom = entry_cupom.get()
-
-    if not all([data, comissao, faturamento, cupom]):
-        messagebox.showwarning("Atenção","Preencha todos os campos")
-        return
 
     try:
-        datetime.strptime(data,"%Y-%m-%d")
+        faturamento = float(entry_faturamento.get())
+        cupom = int(entry_cupom.get())
+        comissao = float(entry_comissao.get())
     except:
-        messagebox.showerror("Erro","Data inválida")
+        messagebox.showerror("Erro", "Valores inválidos")
         return
 
-    comissao = float(comissao)
-    faturamento = float(faturamento)
-    cupom = int(cupom)
+    # =========================
+    # VERIFICAR SE JÁ EXISTE
+    # =========================
+    cursor.execute("SELECT data FROM base_fat WHERE data = %s", (data,))
+    existe = cursor.fetchone()
+
+    if existe:
+        confirmar = messagebox.askyesno("Registro existente", "Deseja atualizar?")
+        if not confirmar:
+            conn.close()
+            return
 
     try:
 
-        cursor.execute(
-            "SELECT data FROM comissao_dia WHERE data = %s",
-            (data,)
-        )
-
-        existe = cursor.fetchone()
-
+        # =========================
+        # BASE_FAT
+        # =========================
         if existe:
-
-            atualizar = messagebox.askyesno(
-                "Registro existente",
-                "Deseja atualizar?"
-            )
-
-            if not atualizar:
-                conn.close()
-                return
-
             cursor.execute("""
-            UPDATE comissao_dia
-            SET comiss_dia = %s
-            WHERE data = %s
-            """,(comissao,data))
-
-            cursor.execute("""
-            DELETE FROM comissao_colaborador
-            WHERE data = %s
-            """,(data,))
-
+                UPDATE base_fat
+                SET faturamento = %s, cupom = %s
+                WHERE data = %s
+            """, (faturamento, cupom, data))
         else:
+            cursor.execute("""
+                INSERT INTO base_fat (data, faturamento, cupom)
+                VALUES (%s, %s, %s)
+            """, (data, faturamento, cupom))
+
+        # =========================
+        # COMISSAO_DIA
+        # =========================
+        cursor.execute("SELECT data FROM comissao_dia WHERE data = %s", (data,))
+        existe_comissao = cursor.fetchone()
+
+        if existe_comissao:
+            cursor.execute("""
+                UPDATE comissao_dia
+                SET comiss_dia = %s
+                WHERE data = %s
+            """, (comissao, data))
+        else:
+            cursor.execute("""
+                INSERT INTO comissao_dia (data, comiss_dia)
+                VALUES (%s, %s)
+            """, (data, comissao))
+
+        # =========================
+        # COMISSAO POR COLABORADOR
+        # =========================
+        cursor.execute("DELETE FROM comissao_colaborador WHERE data = %s", (data,))
+
+        presentes = [colab_id for colab_id, var in check_vars.items() if var.get() == 1]
+        qtd_presentes = len(presentes)
+
+        if qtd_presentes > 0:
+            valor_individual = (comissao / qtd_presentes) * 0.80
+        else:
+            valor_individual = 0
+
+        for colab_id, var in check_vars.items():
+            presente = bool(var.get())
 
             cursor.execute("""
-            INSERT INTO comissao_dia (data,comiss_dia)
-            VALUES (%s,%s)
-            """,(data,comissao))
-
-        for colab_id,var in check_vars.items():
-
-            cursor.execute("""
-            INSERT INTO comissao_colaborador
-            (data,colaborador_id,presente)
-            VALUES (%s,%s,%s)
-            """,(data,colab_id,bool(var.get())))
-
-        cursor.execute("""
-        UPDATE base_fat
-        SET faturamento = %s, cupom = %s
-        WHERE data = %s
-        """,(faturamento,cupom,data))
+                INSERT INTO comissao_colaborador
+                (data, colaborador_id, presente, valor)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                data,
+                colab_id,
+                presente,
+                valor_individual if presente else 0
+            ))
 
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Sucesso","Dados salvos")
+        messagebox.showinfo("Sucesso", "Dados salvos com sucesso")
 
     except Exception as e:
         conn.rollback()
         conn.close()
-        messagebox.showerror("Erro",str(e))
+        messagebox.showerror("Erro", str(e))
 
 # ==========================================================
 # INTERFACE
