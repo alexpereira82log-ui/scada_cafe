@@ -1,14 +1,14 @@
-import sqlite3
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 from datetime import datetime
 
-CAMINHO_BANCO = "faturamento_scada.db"
+from database.connection import get_connection
+
 
 def salvar_registro():
     try:
-        conn = sqlite3.connect(CAMINHO_BANCO)
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -20,12 +20,12 @@ def salvar_registro():
                 motivo,
                 responsavel,
                 obs
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
             entry_data.get(),
             entry_item.get(),
             combo_categoria.get(),
-            entry_qtd.get(),
+            int(entry_qtd.get()),
             combo_motivo.get(),
             combo_responsavel.get(),
             entry_obs.get()
@@ -40,6 +40,7 @@ def salvar_registro():
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro:\n{e}")
 
+
 def limpar_campos():
     entry_data.delete(0, tk.END)
     entry_data.insert(0, datetime.today().strftime("%Y-%m-%d"))
@@ -49,6 +50,7 @@ def limpar_campos():
     combo_motivo.set('')
     combo_responsavel.set('')
     entry_obs.delete(0, tk.END)
+
 
 root = tk.Tk()
 root.title("Registro de Perdas")
@@ -65,7 +67,7 @@ tk.Label(root, text="Item").pack()
 entry_item = tk.Entry(root)
 entry_item.pack()
 
-# Categoria (Combobox)
+# Categoria
 tk.Label(root, text="Categoria").pack()
 combo_categoria = ttk.Combobox(
     root,
@@ -86,7 +88,7 @@ tk.Label(root, text="Quantidade").pack()
 entry_qtd = tk.Entry(root)
 entry_qtd.pack()
 
-# Motivo (Combobox)
+# Motivo
 tk.Label(root, text="Motivo").pack()
 combo_motivo = ttk.Combobox(
     root,
@@ -103,22 +105,14 @@ combo_motivo = ttk.Combobox(
 )
 combo_motivo.pack()
 
-# Responsável (Combobox)
+# Responsável
 tk.Label(root, text="Responsável").pack()
 combo_responsavel = ttk.Combobox(
     root,
     values=[
-        "Brunna",
-        "Alex",
-        "Jaqueline",
-        "Fatima",
-        "Fabio",
-        "Jeisiana",
-        "David",
-        "Alexandro",
-        "Jessyca",
-        "Naiane",
-        "Francisca"
+        "Brunna", "Alex", "Jaqueline", "Fatima", "Fabio",
+        "Jeisiana", "David", "Alexandro", "Jessyca",
+        "Naiane", "Francisca"
     ],
     state="readonly"
 )
