@@ -499,7 +499,7 @@ with tab4:
 
     st.plotly_chart(fig_perdas, use_container_width=True)
 
-    st.markdown("### 📋 Dados de Perdas")
+    st.markdown("### 📋 Perdas por Motivo")
 
     st.dataframe(df_perdas, use_container_width=True)
 
@@ -545,6 +545,48 @@ with tab4:
     )
 
     st.plotly_chart(fig_perdas_mes, use_container_width=True)
+
+
+    # =========================
+    # 📋 TABELA DETALHADA DE PERDAS (MÊS)
+    # =========================
+
+    st.markdown("### 📋 Detalhamento de Perdas do Mês")
+
+    df_perdas_detalhe = dados["base_perdas"].copy()
+
+    # Filtro por ano e mês
+    df_perdas_detalhe = df_perdas_detalhe[
+        (df_perdas_detalhe["data"].dt.year == ano) &
+        (df_perdas_detalhe["data"].dt.month == mes)
+    ]
+
+    # Ordenar por data decrescente
+    df_perdas_detalhe = df_perdas_detalhe.sort_values(
+        by="data",
+        ascending=False
+    )
+
+    # 🔥 Ajustar formato da data
+    df_perdas_detalhe["data"] = df_perdas_detalhe["data"].dt.strftime("%Y-%m-%d")
+
+    # Exibir tabela
+    st.dataframe(df_perdas_detalhe, use_container_width=True)
+
+ 
+    # 📥 Download Excel
+    import io
+
+    buffer = io.BytesIO()
+    df_perdas_detalhe.to_excel(buffer, index=False)
+    buffer.seek(0)
+
+    st.download_button(
+        label="📥 Baixar Perdas",
+        data=buffer,
+        file_name="perdas_mes.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 
 # ======================================================
