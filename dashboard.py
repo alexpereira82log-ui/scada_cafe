@@ -224,12 +224,33 @@ with tab2:
     # =========================
     # GRÁFICOS PRINCIPAIS
     # =========================
-    fig_fat = px.bar(
-        df_fat,
-        x="mes_nome",
-        y="faturamento",
-        text="faturamento",
-        title="Faturamento Mensal"
+    fig_fat = go.Figure()
+
+    # 🔹 Meta (fundo)
+    fig_fat.add_bar(
+        x=df_fat["mes_nome"],
+        y=df_fat["meta"],
+        name="Meta",
+        marker_color="lightgray",
+        opacity=0.6
+    )
+
+    # 🔹 Faturamento (frente)
+    fig_fat.add_bar(
+        x=df_fat["mes_nome"],
+        y=df_fat["faturamento"],
+        name="Faturamento",
+        text=df_fat["faturamento"],
+        texttemplate="R$ %{text:,.0f}",
+        textposition="outside"
+    )
+
+    # 🔹 Layout overlay
+    fig_fat.update_layout(
+        barmode="overlay",
+        title="Faturamento vs Meta",
+        xaxis_title="Mês",
+        yaxis_title="Valor (R$)"
     )
 
     fig_fat.update_traces(texttemplate="R$ %{text:,.0f}")
