@@ -11,6 +11,8 @@ def carregar_dados():
 
     dados = {}
 
+    print(dados.keys())
+
     try:
         dados["base_fat"] = pd.read_sql("SELECT * FROM base_fat", conn)
     except:
@@ -30,6 +32,11 @@ def carregar_dados():
         dados["base_produtos"] = pd.read_sql("SELECT * FROM venda_produtos", conn)
     except:
         dados["base_produtos"] = pd.DataFrame()
+
+    try:
+        dados["base_colaboradores"] = pd.read_sql("SELECT * FROM colaboradores", conn)
+    except:
+        dados["base_colaboradores"] = pd.DataFrame()
 
     conn.close()
 

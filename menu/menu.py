@@ -5,11 +5,11 @@ from services.analises import (
     faturamento_por_mes,
     faturamento_por_dia,
     top_produtos,
-    perdas_por_motivo
+    perdas_por_motivo,
+    perdas_por_mes,
+    comissao_por_colaborador,
+    calcular_comissao_projecoes
 )
-
-from services.relatorios import exportar_excel
-from services.email_service import enviar_email_com_anexo
 
 
 def aguardar_comando():
@@ -19,29 +19,6 @@ def aguardar_comando():
 # ============================================================
 # FUNÇÕES DE EXIBIÇÃO
 # ============================================================
-
-def mostrar_resumo(metricas):
-    print("\n" + "-" * 50)
-    print("RESUMO DO FATURAMENTO")
-    print(f"Faturamento Total: R$ {metricas['total_faturamento']:,.2f}")
-    print(f"Meta do Mês: R$ {metricas['meta_mes']:,.2f}")
-    print(f"% da Meta: {metricas['percentual_meta']:.0%}")
-    print(f"Faturamento Médio Dia: R$ {metricas['media_fat_dia']:,.2f}")
-    print(f"Ticket Médio: R$ {metricas['ticket_medio']:,.2f}")
-    print(f"Média de Cupons: {metricas['media_cupons']:.0f}")
-    print("-" * 50)
-
-
-def mostrar_projecoes(metricas):
-    print("\n" + "-" * 50)
-    print("PROJEÇÕES E META")
-    print(f"Falta para meta: R$ {metricas['falta_para_meta']:,.2f}")
-    print(f"Projeção do mês: R$ {metricas['projecao_mes']:,.2f}")
-    print(f"Meta diária necessária: R$ {metricas['meta_dia']:,.2f}")
-    print(f"Ticket necessário: R$ {metricas['meta_ticket']:,.2f}")
-    print(f"Diferença ticket: R$ {metricas['diferenca_ticket']:,.2f}")
-    print("-" * 50)
-
 
 def mostrar_faturamento_mes(dados, ano):
     df = faturamento_por_mes(dados, ano)
@@ -55,32 +32,59 @@ def mostrar_faturamento_dia(dados, ano, mes):
     print(df)
 
 
+def mostrar_projecoes(metricas):
+    print("\n" + "-" * 50)
+    print("PROJEÇÕES E META")
+
+    falta_meta = metricas["meta"] - metricas["total_fat"]
+    diferenca_ticket = metricas["ticket_necessario"] - metricas["ticket_medio"]
+
+    print(f"Falta para meta: R$ {falta_meta:,.2f}")
+    print(f"Projeção do mês: R$ {metricas['proj_fat']:,.2f}")
+    print(f"Meta diária necessária: R$ {metricas['fat_dia_necessario']:,.2f}")
+    print(f"Ticket necessário: R$ {metricas['ticket_necessario']:,.2f}")
+    print(f"Diferença ticket: R$ {diferenca_ticket:,.2f}")
+    print(f"Dias restantes: {metricas['dias_restantes']}")
+
+    print("-" * 50)
+
+
 def mostrar_top_produtos(dados, ano):
     df = top_produtos(dados, ano)
     print("\nTOP PRODUTOS")
     print(df.head(10))
 
 
-def mostrar_perdas(dados, ano, mes):
-    df = perdas_por_motivo(dados, ano, mes)
-    print("\nPERDAS POR MOTIVO")
+def mostrar_perdas_mes(dados, ano):
+    df = perdas_por_mes(dados, ano)
+    print("\nPERDAS POR MÊS")
     print(df)
 
 
-def exportar_faturamento_mes(dados, ano):
-    from services.analises import faturamento_por_mes
-
-    df = faturamento_por_mes(dados, ano)
-    arquivo = exportar_excel(df, "Relatorio_Faturamento_Mes")
-    enviar_email_com_anexo(arquivo)
+def mostrar_perdas_motivo(dados, ano, mes):
+    df = perdas_por_motivo(dados, ano, mes)
+    print("\nPERDAS POR MOTIVO (MÊS)")
+    print(df)
 
 
-def exportar_top_produtos(dados, ano):
-    from services.analises import top_produtos
+def mostrar_comissao_projecoes(dados, ano, mes, metricas):
 
-    df = top_produtos(dados, ano)
-    arquivo = exportar_excel(df, "Relatorio_Top_Produtos")
-    enviar_email_com_anexo(arquivo)
+    resultado = calcular_comissao_projecoes(dados, ano, mes, metricas)
+
+    print("\n" + "-" * 50)
+    print("COMISSÃO E PROJEÇÕES")
+
+    if resultado["df"].empty:
+        print("Sem dados de comissão.")
+        return
+
+    print("\nCOMISSÃO ACUMULADA POR COLABORADOR")
+    print(resultado["df"])
+
+    print(f"\nMédia de comissão atual: R$ {resultado['media']:,.2f}")
+    print(f"Projeção de comissão individual: R$ {resultado['projecao']:,.2f}")
+
+    print("-" * 50)
 
 
 # ============================================================
@@ -94,54 +98,48 @@ def iniciar_menu(dados, ano, mes, metricas):
 
         print("DADOS SCADA CAFE - CINEMA")
         print("-----------------------------------")
-        print("1 - Resumo Faturamento")
-        print("2 - Projeções e Meta")
-        print("3 - Faturamento por Mês")
-        print("4 - Faturamento por Dia")
-        print("5 - Top Produtos")
-        print("6 - Perdas por Motivo")
-        print("7 - Exportar Faturamento por Mês (Excel + Email)")
-        print("8 - Exportar Top Produtos (Excel + Email)")
+        print("1 - Faturamento por Mês")
+        print("2 - Faturamento por Dia")
+        print("3 - Projeções e Meta")
+        print("4 - Top Produtos")
+        print("5 - Perdas Mês a Mês")
+        print("6 - Perdas por Motivo (Mês atual)")
+        print("7 - Comissão e Projeções")
         print("x - Sair")
 
         escolha = input("Escolha uma opção: ")
 
         if escolha == "1":
-            mostrar_resumo(metricas)
-            aguardar_comando()
-
-        elif escolha == "2":
-            mostrar_projecoes(metricas)
-            aguardar_comando()
-
-        elif escolha == "3":
             mostrar_faturamento_mes(dados, ano)
             aguardar_comando()
 
-        elif escolha == "4":
+        elif escolha == "2":
             mostrar_faturamento_dia(dados, ano, mes)
             aguardar_comando()
 
-        elif escolha == "5":
+        elif escolha == "3":
+            mostrar_projecoes(metricas)
+            aguardar_comando()
+
+        elif escolha == "4":
             mostrar_top_produtos(dados, ano)
             aguardar_comando()
 
+        elif escolha == "5":
+            mostrar_perdas_mes(dados, ano)
+            aguardar_comando()
+
         elif escolha == "6":
-            mostrar_perdas(dados, ano, mes)
+            mostrar_perdas_motivo(dados, ano, mes)
             aguardar_comando()
 
         elif escolha == "7":
-            exportar_faturamento_mes(dados, ano)
+            mostrar_comissao_projecoes(dados, ano, mes, metricas)
             aguardar_comando()
 
-        elif escolha == "8":
-            exportar_top_produtos(dados, ano)
-            aguardar_comando()
-
-        elif escolha == "x":
+        elif escolha.lower() == "x":
             break
 
         else:
             print("Opção inválida")
             time.sleep(1)
-
