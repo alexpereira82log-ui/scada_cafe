@@ -20,15 +20,23 @@ conn.close()
 # ==========================================================
 
 def calcular_rateio():
+
     try:
         comissao = float(entry_comissao.get())
-        presentes = sum(var.get() for var in check_vars.values())
 
-        if presentes == 0:
+        presentes = [
+            colab_id for colab_id, var in check_vars.items()
+            if var.get() == 1 and colab_id != 1
+        ]
+
+        qtd_presentes = len(presentes)
+
+        if qtd_presentes == 0:
             label_rateio["text"] = "Rateio: 0"
             return
 
-        rateio = (comissao * 0.8) / presentes
+        rateio = (comissao * 0.8) / qtd_presentes
+
         label_rateio["text"] = f"Rateio por colaborador: {rateio:.2f}"
 
     except:
@@ -46,9 +54,6 @@ def carregar_dia():
     data = entry_data.get()
 
     try:
-        # =========================
-        # COMISSAO DO DIA
-        # =========================
         cursor.execute("""
             SELECT comiss_dia 
             FROM comissao_dia
@@ -63,9 +68,6 @@ def carregar_dia():
         else:
             entry_comissao.delete(0, tk.END)
 
-        # =========================
-        # PRESENÇA COLABORADORES
-        # =========================
         cursor.execute("""
             SELECT colaborador_id, presente
             FROM comissao_colaborador
@@ -74,18 +76,13 @@ def carregar_dia():
 
         presencas = cursor.fetchall()
 
-        # Resetar todos primeiro
         for var in check_vars.values():
             var.set(0)
 
-        # Aplicar os que vieram do banco
         for colab_id, presente in presencas:
             if colab_id in check_vars:
                 check_vars[colab_id].set(1 if presente else 0)
 
-        # =========================
-        # FATURAMENTO E CUPOM
-        # =========================
         cursor.execute("""
             SELECT faturamento, cupom
             FROM base_fat
@@ -106,14 +103,8 @@ def carregar_dia():
 
         conn.close()
 
-        # =========================
-        # RECALCULAR RATEIO
-        # =========================
         calcular_rateio()
 
-        # =========================
-        # FEEDBACK
-        # =========================
         if not resultado and not fat:
             messagebox.showinfo("Aviso", "Nenhum registro encontrado para essa data")
         else:
@@ -142,9 +133,6 @@ def salvar():
         messagebox.showerror("Erro", "Valores inválidos")
         return
 
-    # =========================
-    # VERIFICAR SE JÁ EXISTE
-    # =========================
     cursor.execute("SELECT data FROM base_fat WHERE data = %s", (data,))
     existe = cursor.fetchone()
 
@@ -194,7 +182,11 @@ def salvar():
         # =========================
         cursor.execute("DELETE FROM comissao_colaborador WHERE data = %s", (data,))
 
-        presentes = [colab_id for colab_id, var in check_vars.items() if var.get() == 1]
+        presentes = [
+            colab_id for colab_id, var in check_vars.items()
+            if var.get() == 1 and colab_id != 1
+        ]
+
         qtd_presentes = len(presentes)
 
         if qtd_presentes > 0:
@@ -203,7 +195,13 @@ def salvar():
             valor_individual = 0
 
         for colab_id, var in check_vars.items():
+
             presente = bool(var.get())
+
+            if colab_id == 1:
+                valor = 0
+            else:
+                valor = valor_individual if presente else 0
 
             cursor.execute("""
                 INSERT INTO comissao_colaborador
@@ -213,7 +211,7 @@ def salvar():
                 data,
                 colab_id,
                 presente,
-                valor_individual if presente else 0
+                valor
             ))
 
         conn.commit()
