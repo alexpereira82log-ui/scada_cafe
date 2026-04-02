@@ -28,21 +28,17 @@ df.columns = (
 print("COLUNAS NORMALIZADAS:", df.columns)
 
 # ==========================================================
-# TRATAMENTO DOS DADOS
+# TRATAMENTO
 # ==========================================================
 
-# ✅ Usar coluna mes diretamente
-if "mes" not in df.columns:
-    raise Exception("Coluna 'mes' não encontrada no arquivo")
-
-df["mes"] = pd.to_datetime(df["mes"], errors="coerce")
-
-# Produto obrigatório
-if "produto" not in df.columns:
-    raise Exception("Coluna 'produto' não encontrada")
+# Data (vem da coluna mes)
+df["data"] = pd.to_datetime(df["data"], errors="coerce")
 
 # Corrigir números com vírgula
-colunas_numericas = ["qtd", "valor_unit", "valor_total"]
+colunas_numericas = [
+    "qtd", "valor_unit", "valor_total",
+    "perc_total_venda", "mtc"
+]
 
 for col in colunas_numericas:
     if col in df.columns:
@@ -54,7 +50,7 @@ for col in colunas_numericas:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
 # Remover inválidos
-df = df.dropna(subset=["mes", "produto"])
+df = df.dropna(subset=["data", "produto"])
 
 # ==========================================================
 # CONEXÃO
@@ -63,24 +59,37 @@ conn = get_connection()
 cursor = conn.cursor()
 
 # ==========================================================
+# LIMPAR MÊS (IMPORTANTE)
+# ==========================================================
+data_min = df["data"].min()
+data_max = df["data"].max()
+
+cursor.execute("""
+    DELETE FROM venda_produtos
+    WHERE data BETWEEN %s AND %s
+""", (data_min, data_max))
+
+# ==========================================================
 # INSERT
 # ==========================================================
 for _, row in df.iterrows():
     cursor.execute("""
         INSERT INTO venda_produtos (
-            mes,
-            produto,
-            qtd,
-            valor_unit,
-            valor_total
+            data, cod, produto, un,
+            qtd, valor_unit, valor_total,
+            perc_total_venda, mtc
         )
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
-        row["mes"],
+        row["data"],
+        row.get("cod"),
         row["produto"],
-        row.get("qtd", 0),
-        row.get("valor_unit", 0),
-        row.get("valor_total", 0)
+        row.get("un"),
+        row.get("qtd"),
+        row.get("valor_unit"),
+        row.get("valor_total"),
+        row.get("perc_total_venda"),
+        row.get("mtc")
     ))
 
 # ==========================================================
