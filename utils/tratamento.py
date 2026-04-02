@@ -17,7 +17,7 @@ def tratar_dados(dados: dict) -> dict:
     # =========================
     base_fat_df["meta"] = pd.to_numeric(base_fat_df["meta"], errors="coerce")
     base_fat_df["faturamento"] = pd.to_numeric(base_fat_df["faturamento"], errors="coerce")
-    base_fat_df["data"] = pd.to_datetime(base_fat_df["data"])
+    base_fat_df["data"] = pd.to_datetime(base_fat_df["data"], errors="coerce")
 
     base_fat_df["ano"] = base_fat_df["data"].dt.year
     base_fat_df["mes"] = base_fat_df["data"].dt.month
@@ -25,7 +25,7 @@ def tratar_dados(dados: dict) -> dict:
     # =========================
     # TRATAMENTO COMISSÃO
     # =========================
-    base_comissao_df["data"] = pd.to_datetime(base_comissao_df["data"])
+    base_comissao_df["data"] = pd.to_datetime(base_comissao_df["data"], errors="coerce")
 
     base_comissao_df["ano"] = base_comissao_df["data"].dt.year
     base_comissao_df["mes"] = base_comissao_df["data"].dt.month
@@ -33,24 +33,29 @@ def tratar_dados(dados: dict) -> dict:
     # =========================
     # TRATAMENTO PRODUTOS
     # =========================
-    colunas_numericas = ["qtd", "valor_unit", "valor_total", "perc_total_venda"]
+    colunas_numericas = ["qtd", "valor_unit", "valor_total", "perc_total_venda", "mtc"]
 
     for col in colunas_numericas:
-        base_produtos_df[col] = (
-            base_produtos_df[col]
-            .astype(str)
-            .str.replace(",", ".", regex=False)
-            .str.replace("%", "", regex=False)
-        )
-        base_produtos_df[col] = pd.to_numeric(base_produtos_df[col], errors="coerce")
+        if col in base_produtos_df.columns:
+            base_produtos_df[col] = (
+                base_produtos_df[col]
+                .astype(str)
+                .str.replace(",", ".", regex=False)
+                .str.replace("%", "", regex=False)
+            )
+            base_produtos_df[col] = pd.to_numeric(base_produtos_df[col], errors="coerce")
 
-    base_produtos_df["mes"] = pd.to_datetime(base_produtos_df["mes"])
-    base_produtos_df["ano"] = base_produtos_df["mes"].dt.year
+    # Garantir data
+    base_produtos_df["data"] = pd.to_datetime(base_produtos_df["data"], errors="coerce")
+
+    # Criar mes e ano corretamente (AQUI ESTAVA O ERRO)
+    base_produtos_df["mes"] = base_produtos_df["data"].dt.month
+    base_produtos_df["ano"] = base_produtos_df["data"].dt.year
 
     # =========================
     # TRATAMENTO PERDAS
     # =========================
-    base_perdas_df["data"] = pd.to_datetime(base_perdas_df["data"])
+    base_perdas_df["data"] = pd.to_datetime(base_perdas_df["data"], errors="coerce")
 
     base_perdas_df["qtd"] = (
         base_perdas_df["qtd"]
