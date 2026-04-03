@@ -36,8 +36,8 @@ def mostrar_projecoes(metricas):
     print("\n" + "-" * 50)
     print("PROJEÇÕES E META")
 
-    falta_meta = metricas["meta"] - metricas["total_fat"]
-    diferenca_ticket = metricas["ticket_necessario"] - metricas["ticket_medio"]
+    falta_meta = metricas["falta_meta"]
+    diferenca_ticket = metricas["diferenca_ticket"]
 
     print(f"Falta para meta: R$ {falta_meta:,.2f}")
     print(f"Projeção do mês: R$ {metricas['proj_fat']:,.2f}")
@@ -107,39 +107,31 @@ def iniciar_menu(dados, ano, mes, metricas):
         print("7 - Comissão e Projeções")
         print("x - Sair")
 
-        escolha = input("Escolha uma opção: ")
+        escolha = input("Escolha uma opção: ").strip()
+        if not escolha:
+            print("Entrada vazia")
+            time.sleep(1)
+            continue
 
-        if escolha == "1":
-            mostrar_faturamento_mes(dados, ano)
-            aguardar_comando()
+        acoes = {
+            "1": lambda: mostrar_faturamento_mes(dados, ano),
+            "2": lambda: mostrar_faturamento_dia(dados, ano, mes),
+            "3": lambda: mostrar_projecoes(metricas),
+            "4": lambda: mostrar_top_produtos(dados, ano),
+            "5": lambda: mostrar_perdas_mes(dados, ano),
+            "6": lambda: mostrar_perdas_motivo(dados, ano, mes),
+            "7": lambda: mostrar_comissao_projecoes(dados, ano, mes, metricas),
+        }
 
-        elif escolha == "2":
-            mostrar_faturamento_dia(dados, ano, mes)
-            aguardar_comando()
-
-        elif escolha == "3":
-            mostrar_projecoes(metricas)
-            aguardar_comando()
-
-        elif escolha == "4":
-            mostrar_top_produtos(dados, ano)
-            aguardar_comando()
-
-        elif escolha == "5":
-            mostrar_perdas_mes(dados, ano)
-            aguardar_comando()
-
-        elif escolha == "6":
-            mostrar_perdas_motivo(dados, ano, mes)
-            aguardar_comando()
-
-        elif escolha == "7":
-            mostrar_comissao_projecoes(dados, ano, mes, metricas)
-            aguardar_comando()
-
-        elif escolha.lower() == "x":
+        if escolha.lower() == "x":
             break
+
+        elif escolha in acoes:
+            acoes[escolha]()
+            aguardar_comando()
 
         else:
             print("Opção inválida")
             time.sleep(1)
+
+
