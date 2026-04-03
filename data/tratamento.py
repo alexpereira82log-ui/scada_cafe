@@ -20,27 +20,26 @@ def tratar_dados(dados: dict) -> dict:
     except:
         pass  # Evita erro em sistemas que não suportam locale
 
-    # ============================================================
-    # TRATAMENTO BASE PRODUTOS
-    # ============================================================
-    colunas_numericas = ["qtd", "valor_unit", "valor_total", "perc_total_venda"]
+    # =========================
+    # TRATAMENTO PRODUTOS
+    # =========================
+    colunas_numericas = ["qtd", "valor_unit", "valor_total", "perc_total_venda", "mtc"]
 
     for col in colunas_numericas:
-        base_produtos_df[col] = (
-            base_produtos_df[col]
-            .astype(str)
-            .str.replace(",", ".", regex=False)
-            .str.replace("%", "", regex=False)
-        )
-        base_produtos_df[col] = pd.to_numeric(base_produtos_df[col], errors="coerce")
+        if col in base_produtos_df.columns:
+            base_produtos_df[col] = (
+                base_produtos_df[col]
+                .astype(str)
+                .str.replace(",", ".", regex=False)
+                .str.replace("%", "", regex=False)
+            )
+            base_produtos_df[col] = pd.to_numeric(base_produtos_df[col], errors="coerce")
 
-    # Converter data
-    base_produtos_df["mes"] = pd.to_datetime(base_produtos_df["mes"])
+    # 🔥 ESSA É A BASE CORRETA AGORA
+    base_produtos_df["data"] = pd.to_datetime(base_produtos_df["data"], errors="coerce")
 
-    # 🔥 CORREÇÃO AQUI
-    base_produtos_df["ano"] = base_produtos_df["mes"].dt.year
-    base_produtos_df["mes_num"] = base_produtos_df["mes"].dt.month
-    base_produtos_df["mes_nome"] = base_produtos_df["mes"].dt.strftime("%B").str.capitalize()
+    base_produtos_df["mes"] = base_produtos_df["data"].dt.month
+    base_produtos_df["ano"] = base_produtos_df["data"].dt.year
 
     # ============================================================
     # TRATAMENTO BASE FATURAMENTO

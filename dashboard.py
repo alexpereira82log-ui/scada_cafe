@@ -256,6 +256,9 @@ with tab2:
     fig_fat.update_traces(texttemplate="R$ %{text:,.0f}")
 
     # Base diária
+    # 🔽 SOMENTE O TRECHO ALTERADO (para não poluir)
+    # Vá direto na aba FATURAMENTO e substitua apenas este bloco:
+
     df_dia = dados["base_fat"].copy()
 
     df_dia = df_dia[
@@ -266,18 +269,27 @@ with tab2:
     if equipe_sel != "Todas":
         df_dia = df_dia[df_dia["equipe"] == equipe_sel]
 
+    # 🔥 CORREÇÃO AQUI
     df_dia = (
         df_dia
         .groupby(df_dia["data"].dt.day)
         .agg({
             "faturamento": "sum",
-            "ticket_medio": "mean",
             "cupom": "sum"
         })
         .reset_index()
     )
 
+    # 🔥 cálculo correto do ticket médio
+    df_dia["ticket_medio"] = df_dia.apply(
+        lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
+        axis=1
+    )
+
+    # manter apenas dias válidos
     df_dia = df_dia[df_dia["faturamento"] > 0]
+
+
 
     fig_dia = px.line(
         df_dia,
