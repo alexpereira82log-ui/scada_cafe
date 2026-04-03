@@ -6,7 +6,7 @@ import io
 
 
 from data.loader import carregar_dados
-from utils.tratamento import tratar_dados
+from data.tratamento import tratar_dados
 from services.analises import faturamento_por_mes
 from services.calculos import calcular_metricas
 from datetime import datetime

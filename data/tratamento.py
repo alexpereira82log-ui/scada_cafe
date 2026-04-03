@@ -11,6 +11,7 @@ def tratar_dados(dados: dict) -> dict:
     base_comissao_df = dados["base_comissao"]
     base_perdas_df = dados["base_perdas"]
     base_produtos_df = dados["base_produtos"]
+    base_colaboradores_df = dados["base_colaboradores"]
 
     # ============================================================
     # CONFIGURAÇÃO DE LOCALE (MESES EM PORTUGUÊS)
@@ -83,4 +84,5 @@ def tratar_dados(dados: dict) -> dict:
         "base_comissao": base_comissao_df,
         "base_perdas": base_perdas_df,
         "base_produtos": base_produtos_df,
+        "base_colaboradores": base_colaboradores_df,
     }

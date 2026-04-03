@@ -37,6 +37,8 @@ def faturamento_por_dia(dados: dict, ano: int, mes: int) -> pd.DataFrame:
         .sort_values("data")
     )
 
+    resultado = resultado[resultado["faturamento"] > 0]
+
     return resultado
 
 
@@ -147,8 +149,8 @@ def comissao_por_colaborador(dados: dict, ano: int, mes: int) -> pd.DataFrame:
 # ============================================================
 def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict) -> dict:
 
-    df = dados["base_comissao"].copy()
-    df_colab = dados["base_colaboradores"].copy()  # 🔥 AGORA VEM DO LOADER
+    df = dados.get("base_comissao", pd.DataFrame()).copy()
+    df_colab = dados.get("base_colaboradores", pd.DataFrame()).copy()
 
     df["data"] = pd.to_datetime(df["data"], errors="coerce")
 
@@ -161,14 +163,17 @@ def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict)
     # ❌ Remover Brunna
     df_mes = df_mes[df_mes["colaborador_id"] != 1]
 
-    if df_mes.empty:
+    if df_mes.empty or df_colab.empty:
         return {
             "df": pd.DataFrame(),
             "media": 0,
-            "projecao": 0
+            "projecao": 0,
+            "total_acumulado": 0
         }
 
-    # Agrupar comissão
+    # =========================
+    # TOTAL POR COLABORADOR
+    # =========================
     df_group = (
         df_mes
         .groupby("colaborador_id")["valor"]
@@ -176,10 +181,9 @@ def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict)
         .reset_index()
     )
 
-    # 🔥 GARANTIR NOMES CORRETOS DAS COLUNAS
+    # Ajustar nomes
     df_colab = df_colab.rename(columns={"id": "colaborador_id"})
 
-    # Merge com nomes
     df_group = df_group.merge(
         df_colab,
         on="colaborador_id",
@@ -190,17 +194,25 @@ def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict)
 
     df_group = df_group[["nome", "valor"]]
 
-    # Média
-    media = df_group["valor"].mean()
+    # =========================
+    # CÁLCULOS CORRETOS
+    # =========================
 
-    # Dias
     dias_passados = df_mes["data"].nunique()
     dias_restantes = metricas["dias_restantes"]
 
-    projecao = media * (dias_passados + dias_restantes) if dias_passados > 0 else 0
+    # 🔥 total acumulado (ex: 25,69)
+    total_acumulado = df_group["valor"].mean()
+
+    # 🔥 média diária correta
+    media = total_acumulado / dias_passados if dias_passados > 0 else 0
+
+    # 🔥 projeção correta
+    projecao = media * (dias_passados + dias_restantes)
 
     return {
         "df": df_group,
         "media": media,
-        "projecao": projecao
+        "projecao": projecao,
+        "total_acumulado": total_acumulado
     }
