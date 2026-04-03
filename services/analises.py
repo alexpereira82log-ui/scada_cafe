@@ -29,7 +29,13 @@ def faturamento_por_dia(dados: dict, ano: int, mes: int) -> pd.DataFrame:
 
     df_mes = df[(df["ano"] == ano) & (df["mes"] == mes)]
 
-    resultado = df_mes[["data", "faturamento"]].dropna()
+    resultado = (
+        df_mes
+        .groupby("data")["faturamento"]
+        .sum()
+        .reset_index()
+        .sort_values("data")
+    )
 
     return resultado
 
@@ -60,7 +66,9 @@ def top_produtos(dados: dict, ano: int) -> pd.DataFrame:
 # PERDAS POR MOTIVO
 # ============================================================
 def perdas_por_motivo(dados: dict, ano: int, mes: int) -> pd.DataFrame:
-    df = dados["base_perdas"]
+    df = dados["base_perdas"].copy()
+
+    df["data"] = pd.to_datetime(df["data"], errors="coerce")
 
     df_filtrado = df[
         (df["data"].dt.year == ano) &
@@ -69,10 +77,10 @@ def perdas_por_motivo(dados: dict, ano: int, mes: int) -> pd.DataFrame:
 
     resultado = (
         df_filtrado
-        .groupby("motivo")[["item"]]
-        .count()
-        .reset_index()
-        .sort_values("item", ascending=False)
+        .groupby("motivo")
+        .size()  # 🔥 conta registros corretamente
+        .reset_index(name="qtd")
+        .sort_values("qtd", ascending=False)
     )
 
     return resultado
@@ -86,7 +94,7 @@ def perdas_por_mes(dados: dict, ano: int) -> pd.DataFrame:
 
     df["data"] = pd.to_datetime(df["data"], errors="coerce")
 
-    df_ano = df[df["data"].dt.year == ano]
+    df_ano = df[df["data"].dt.year == ano].copy()
 
     df_ano["mes"] = df_ano["data"].dt.month
 
@@ -140,6 +148,7 @@ def comissao_por_colaborador(dados: dict, ano: int, mes: int) -> pd.DataFrame:
 def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict) -> dict:
 
     df = dados["base_comissao"].copy()
+    df_colab = dados["base_colaboradores"].copy()  # 🔥 AGORA VEM DO LOADER
 
     df["data"] = pd.to_datetime(df["data"], errors="coerce")
 
@@ -167,16 +176,13 @@ def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict)
         .reset_index()
     )
 
-    # 🔥 BUSCAR NOMES DIRETO DO BANCO (SOLUÇÃO ROBUSTA)
-    conn = get_connection()
-    df_colab = pd.read_sql("SELECT id, nome FROM colaboradores", conn)
-    conn.close()
+    # 🔥 GARANTIR NOMES CORRETOS DAS COLUNAS
+    df_colab = df_colab.rename(columns={"id": "colaborador_id"})
 
-    # Merge
+    # Merge com nomes
     df_group = df_group.merge(
         df_colab,
-        left_on="colaborador_id",
-        right_on="id",
+        on="colaborador_id",
         how="left"
     )
 
