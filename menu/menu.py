@@ -81,7 +81,8 @@ def mostrar_comissao_projecoes(dados, ano, mes, metricas):
     print("\nCOMISSÃO ACUMULADA POR COLABORADOR")
     print(resultado["df"])
 
-    print(f"\nMédia de comissão atual: R$ {resultado['media']:,.2f}")
+    print(f"\nTotal comissão acumulada: R$ {resultado['total_acumulado']:,.2f}")
+    print(f"Média de comissão atual: R$ {resultado['media']:,.2f}")
     print(f"Projeção de comissão individual: R$ {resultado['projecao']:,.2f}")
 
     print("-" * 50)
