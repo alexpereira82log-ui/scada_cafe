@@ -1,41 +1,61 @@
 import pandas as pd
-import sqlite3
+from database.connection import get_connection
 
 # ================================
-# CONFIGURAÇÕES
+# CONFIG
 # ================================
-CAMINHO_EXCEL = "dados_excel/metas.xlsx"
-BANCO_DADOS = "faturamento_scada.db"
-TABELA_DESTINO = "base_fat"
-TABELA_TEMP = "temp_meta_import"
+ARQUIVO = "metas.xlsx"
 
 # ================================
-# 1. LER EXCEL COMO TEXTO
+# 1. LER EXCEL
 # ================================
-df = pd.read_excel(CAMINHO_EXCEL, dtype=str)
+df = pd.read_excel(ARQUIVO)
 
 # ================================
-# 2. TRATAR DADOS
+# 2. TRATAR DATA
+# ================================
+df["data"] = pd.to_datetime(df["data"], errors="coerce")
+df = df.dropna(subset=["data"])
+df["data"] = df["data"].dt.strftime("%Y-%m-%d")
+
+# ================================
+# 3. TRATAR META (VERSÃO ROBUSTA)
 # ================================
 
-# Data
-df["data"] = pd.to_datetime(df["data"], errors="coerce").dt.strftime("%Y-%m-%d")
+def tratar_meta(valor):
+    if pd.isna(valor):
+        return None
 
-# Meta (AGORA SIMPLES E CORRETO)
-df["meta"] = (
-    df["meta"]
-    .astype(str)
-    .str.strip()
-    .str.replace(",", ".", regex=False)  # só troca decimal
-)
+    valor = str(valor).strip()
 
-df["meta"] = pd.to_numeric(df["meta"], errors="coerce")
+    # Se já veio como número correto (caso raro)
+    try:
+        return float(valor)
+    except:
+        pass
 
+    # Remove milhar e ajusta decimal
+    valor = valor.replace(".", "").replace(",", ".")
+
+    try:
+        return float(valor)
+    except:
+        return None
+
+
+df["meta"] = df["meta"].apply(tratar_meta)
 df["meta"] = df["meta"].round(2)
+
+# 🔥 VALIDAÇÃO DE ESCALA (AQUI)
+if df["meta"].max() > 10000:
+    print("⚠️ Possível erro de escala detectado")
 
 # ================================
 # 3. VALIDAÇÃO
 # ================================
+print("\n🔍 Tipos:")
+print(df.dtypes)
+
 print("\n🔍 Pré-visualização:")
 print(df.head())
 
@@ -45,49 +65,33 @@ if df["meta"].isnull().any():
     exit()
 
 # ================================
-# 4. CONECTAR AO SQLITE
+# 4. CONEXÃO
 # ================================
-conn = sqlite3.connect(BANCO_DADOS)
+conn = get_connection()
 cursor = conn.cursor()
 
 # ================================
-# 5. TABELA TEMPORÁRIA
+# 5. UPDATE DIRETO (SEGURO)
 # ================================
-cursor.execute(f"DROP TABLE IF EXISTS {TABELA_TEMP};")
+linhas_atualizadas = 0
 
-cursor.execute(f"""
-CREATE TABLE {TABELA_TEMP} (
-    data TEXT PRIMARY KEY,
-    meta REAL
-);
-""")
+for _, row in df.iterrows():
+    cursor.execute("""
+        UPDATE base_fat
+        SET meta = %s
+        WHERE data = %s
+    """, (
+        float(row["meta"]),  # 🔥 garante tipo correto
+        row["data"]
+    ))
+
+    if cursor.rowcount > 0:
+        linhas_atualizadas += 1
 
 # ================================
-# 6. INSERIR DADOS
+# 6. FINALIZAR
 # ================================
-df.to_sql(TABELA_TEMP, conn, if_exists="append", index=False)
-
-# ================================
-# 7. UPDATE (SUBSTITUI VALORES)
-# ================================
-cursor.execute(f"""
-UPDATE {TABELA_DESTINO}
-SET meta = (
-    SELECT t.meta
-    FROM {TABELA_TEMP} t
-    WHERE t.data = {TABELA_DESTINO}.data
-)
-WHERE data IN (SELECT data FROM {TABELA_TEMP});
-""")
-
 conn.commit()
-
-# ================================
-# 8. LIMPEZA
-# ================================
-cursor.execute(f"DROP TABLE {TABELA_TEMP};")
-conn.commit()
-
 conn.close()
 
-print("\n✅ Atualização concluída com sucesso!")
+print(f"\n✅ Metas atualizadas com sucesso! ({linhas_atualizadas} linhas afetadas)")

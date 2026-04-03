@@ -6,7 +6,7 @@ import io
 
 
 from data.loader import carregar_dados
-from utils.tratamento import tratar_dados
+from data.tratamento import tratar_dados
 from services.analises import faturamento_por_mes
 from services.calculos import calcular_metricas
 from datetime import datetime
@@ -224,17 +224,41 @@ with tab2:
     # =========================
     # GRÁFICOS PRINCIPAIS
     # =========================
-    fig_fat = px.bar(
-        df_fat,
-        x="mes_nome",
-        y="faturamento",
-        text="faturamento",
-        title="Faturamento Mensal"
+    fig_fat = go.Figure()
+
+    # 🔹 Meta (fundo)
+    fig_fat.add_bar(
+        x=df_fat["mes_nome"],
+        y=df_fat["meta"],
+        name="Meta",
+        marker_color="lightgray",
+        opacity=0.6
+    )
+
+    # 🔹 Faturamento (frente)
+    fig_fat.add_bar(
+        x=df_fat["mes_nome"],
+        y=df_fat["faturamento"],
+        name="Faturamento",
+        text=df_fat["faturamento"],
+        texttemplate="R$ %{text:,.0f}",
+        textposition="outside"
+    )
+
+    # 🔹 Layout overlay
+    fig_fat.update_layout(
+        barmode="overlay",
+        title="Faturamento vs Meta",
+        xaxis_title="Mês",
+        yaxis_title="Valor (R$)"
     )
 
     fig_fat.update_traces(texttemplate="R$ %{text:,.0f}")
 
     # Base diária
+    # 🔽 SOMENTE O TRECHO ALTERADO (para não poluir)
+    # Vá direto na aba FATURAMENTO e substitua apenas este bloco:
+
     df_dia = dados["base_fat"].copy()
 
     df_dia = df_dia[
@@ -245,18 +269,27 @@ with tab2:
     if equipe_sel != "Todas":
         df_dia = df_dia[df_dia["equipe"] == equipe_sel]
 
+    # 🔥 CORREÇÃO AQUI
     df_dia = (
         df_dia
         .groupby(df_dia["data"].dt.day)
         .agg({
             "faturamento": "sum",
-            "ticket_medio": "mean",
             "cupom": "sum"
         })
         .reset_index()
     )
 
+    # 🔥 cálculo correto do ticket médio
+    df_dia["ticket_medio"] = df_dia.apply(
+        lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
+        axis=1
+    )
+
+    # manter apenas dias válidos
     df_dia = df_dia[df_dia["faturamento"] > 0]
+
+
 
     fig_dia = px.line(
         df_dia,
@@ -499,7 +532,7 @@ with tab4:
 
     st.plotly_chart(fig_perdas, use_container_width=True)
 
-    st.markdown("### 📋 Dados de Perdas")
+    st.markdown("### 📋 Perdas por Motivo")
 
     st.dataframe(df_perdas, use_container_width=True)
 
@@ -547,50 +580,166 @@ with tab4:
     st.plotly_chart(fig_perdas_mes, use_container_width=True)
 
 
+    # =========================
+    # 📋 TABELA DETALHADA DE PERDAS (MÊS)
+    # =========================
+
+    st.markdown("### 📋 Detalhamento de Perdas do Mês")
+
+    df_perdas_detalhe = dados["base_perdas"].copy()
+
+    # Filtro por ano e mês
+    df_perdas_detalhe = df_perdas_detalhe[
+        (df_perdas_detalhe["data"].dt.year == ano) &
+        (df_perdas_detalhe["data"].dt.month == mes)
+    ]
+
+    # Ordenar por data decrescente
+    df_perdas_detalhe = df_perdas_detalhe.sort_values(
+        by="data",
+        ascending=False
+    )
+
+    # 🔥 Ajustar formato da data
+    df_perdas_detalhe["data"] = df_perdas_detalhe["data"].dt.strftime("%Y-%m-%d")
+
+    # Exibir tabela
+    st.dataframe(df_perdas_detalhe, use_container_width=True)
+
+ 
+    # 📥 Download Excel
+    import io
+
+    buffer = io.BytesIO()
+    df_perdas_detalhe.to_excel(buffer, index=False)
+    buffer.seek(0)
+
+    st.download_button(
+        label="📥 Baixar Perdas",
+        data=buffer,
+        file_name="perdas_mes.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
 # ======================================================
 # 🏆 PRODUTOS
 # ======================================================
 with tab5:
 
-    st.subheader("🏆 Produtos")
+    st.subheader("📊 Performance de Produtos")
 
-    df_prod = dados["base_produtos"].copy()
+    df = dados["base_produtos"].copy()
 
-    df_prod = df_prod[df_prod["ano"] == ano]
+    # =========================
+    # FILTRO
+    # =========================
+    df = df[
+        (df["ano"] == ano) &
+        (df["mes"] == mes)
+    ]
 
-    if produto_sel != "Todos":
-        df_prod = df_prod[df_prod["produto"] == produto_sel]
+    if df.empty:
+        st.warning("Sem dados de produtos para o período selecionado.")
+        st.stop()
 
-    df_prod = df_prod.groupby("produto")["qtd"].sum().reset_index()
-    df_prod = df_prod.sort_values("qtd", ascending=False).head(10)
-
-    fig_prod = px.bar(
-        df_prod,
-        x="qtd",
-        y="produto",
-        orientation="h",
-        text="qtd"
+    # =========================
+    # AGRUPAMENTO
+    # =========================
+    df_prod = (
+        df
+        .groupby("produto")
+        .agg({
+            "qtd": "sum",
+            "valor_total": "sum"
+        })
+        .reset_index()
+        .sort_values("valor_total", ascending=False)
     )
 
-    st.plotly_chart(fig_prod, use_container_width=True)
-
-    st.markdown("### 📋 Dados detalhados")
+    # =========================
+    # RANKING
+    # =========================
+    st.markdown("### 🏆 Ranking de Produtos")
 
     st.dataframe(
-        df_prod,
+        df_prod.head(10),
         use_container_width=True
     )
 
+    # =========================
+    # GRÁFICO TOP PRODUTOS
+    # =========================
+    import plotly.express as px
 
-    # Converter para Excel em memória
-    buffer_prod = io.BytesIO()
-    df_prod.to_excel(buffer_prod, index=False)
-    buffer_prod.seek(0)
-
-    st.download_button(
-        label="📥 Baixar Excel",
-        data=buffer_prod,
-        file_name="produtos.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    fig_top = px.bar(
+        df_prod.head(10),
+        x="valor_total",
+        y="produto",
+        orientation="h",
+        text="valor_total"
     )
 
+    fig_top.update_traces(texttemplate="R$ %{text:,.0f}")
+    fig_top.update_layout(yaxis=dict(autorange="reversed"))
+
+    st.plotly_chart(fig_top, use_container_width=True)
+
+    # =========================
+    # CURVA ABC
+    # =========================
+    st.markdown("### 📈 Curva ABC")
+
+    df_prod["perc_acumulado"] = (
+        df_prod["valor_total"].cumsum() /
+        df_prod["valor_total"].sum()
+    )
+
+    def classificar_abc(p):
+        if p <= 0.8:
+            return "A"
+        elif p <= 0.95:
+            return "B"
+        else:
+            return "C"
+
+    df_prod["classe"] = df_prod["perc_acumulado"].apply(classificar_abc)
+
+    fig_abc = px.line(
+        df_prod,
+        x=range(len(df_prod)),
+        y="perc_acumulado"
+    )
+
+    st.plotly_chart(fig_abc, use_container_width=True)
+
+    st.dataframe(
+        df_prod[["produto", "valor_total", "classe"]],
+        use_container_width=True
+    )
+
+    # =========================
+    # INSIGHTS AUTOMÁTICOS
+    # =========================
+    st.markdown("### 🧠 Insights Automáticos")
+
+    top1 = df_prod.iloc[0]
+
+    perc_top1 = top1["valor_total"] / df_prod["valor_total"].sum()
+
+    insights = []
+
+    if perc_top1 > 0.25:
+        insights.append("Alta dependência de um único produto.")
+
+    if len(df_prod[df_prod["classe"] == "A"]) < 5:
+        insights.append("Poucos produtos representam a maior parte da receita.")
+
+    if df_prod["qtd"].mean() < 5:
+        insights.append("Baixo volume médio de vendas por produto.")
+
+    if not insights:
+        insights.append("Mix de produtos equilibrado.")
+
+    for i in insights:
+        st.info(i)
