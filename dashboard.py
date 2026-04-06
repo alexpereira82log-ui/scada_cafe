@@ -400,6 +400,101 @@ with tab2:
 
     st.plotly_chart(fig_ytd, use_container_width=True)
 
+    # =========================
+    # 📊 TICKET MÉDIO x CUPONS (MENSAL)
+    # =========================
+    st.markdown("### 📊 Ticket Médio x Cupons (Mensal)")
+
+    df_tc = dados["base_fat"].copy()
+
+    # filtrar apenas ano atual
+    df_tc = df_tc[df_tc["ano"] == ano]
+
+    # 🔥 apenas até o mês atual selecionado
+    df_tc = df_tc[df_tc["mes"] <= mes]
+
+    # =========================
+    # AGRUPAMENTO MENSAL CORRETO
+    # =========================
+    df_tc = (
+        df_tc
+        .groupby("mes")
+        .agg({
+            "faturamento": "sum",
+            "cupom": "sum"
+        })
+        .reset_index()
+    )
+
+    # 🔥 ticket médio correto (NÃO média)
+    df_tc["ticket_medio"] = df_tc.apply(
+        lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
+        axis=1
+    )
+
+    # 🔥 média de cupons por dia no mês
+    df_tc["cupons_medios"] = (
+        dados["base_fat"]
+        .copy()
+        .query("ano == @ano")
+        .query("mes <= @mes")
+        .groupby("mes")["cupom"]
+        .mean()
+        .values
+    )
+
+    # nomes dos meses
+    meses_dict = {
+        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
+        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
+        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+    }
+
+    df_tc["mes_nome"] = df_tc["mes"].map(meses_dict)
+
+    # =========================
+    # GRÁFICO
+    # =========================
+    fig_tc = go.Figure()
+
+    # Ticket médio
+    fig_tc.add_trace(
+        go.Scatter(
+            x=df_tc["mes_nome"],
+            y=df_tc["ticket_medio"],
+            mode="lines+markers",
+            name="Ticket Médio",
+            yaxis="y1"
+        )
+    )
+
+    # Cupons médios
+    fig_tc.add_trace(
+        go.Scatter(
+            x=df_tc["mes_nome"],
+            y=df_tc["cupons_medios"],
+            mode="lines+markers",
+            name="Cupons Médios",
+            yaxis="y2"
+        )
+    )
+
+    # layout
+    fig_tc.update_layout(
+        title="Ticket Médio x Cupons por Mês",
+        xaxis_title="Mês",
+        yaxis=dict(title="Ticket Médio (R$)"),
+        yaxis2=dict(
+            title="Cupons Médios",
+            overlaying="y",
+            side="right"
+        ),
+        legend=dict(x=0.01, y=0.99),
+        height=400
+    )
+
+    st.plotly_chart(fig_tc, use_container_width=True)
+
 
 # ======================================================
 # 📌 PROJEÇÕES
@@ -453,39 +548,47 @@ with tab3:
         (df_plot["mes"] == mes)
     ]
 
-    # Ticket médio por dia
-    ticket_dia = (
-        df_plot.groupby(df_plot["data"].dt.day)["ticket_medio"]
-        .mean()
+    # =========================
+    # BASE CORRETA
+    # =========================
+    df_plot = (
+        df_plot
+        .groupby(df_plot["data"].dt.day)
+        .agg({
+            "faturamento": "sum",
+            "cupom": "sum"
+        })
         .reset_index()
     )
 
-    # Cupons por dia
-    cupons_dia = (
-        df_plot.groupby(df_plot["data"].dt.day)["cupom"]
-        .sum()
-        .reset_index()
+    # 🔥 remover dias sem faturamento
+    df_plot = df_plot[df_plot["faturamento"] > 0]
+
+    # 🔥 ticket médio correto
+    df_plot["ticket_medio"] = df_plot.apply(
+        lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
+        axis=1
     )
 
     # Criar figura
     fig = go.Figure()
 
-    # Linha 1 - Ticket médio
+    # Ticket médio
     fig.add_trace(
         go.Scatter(
-            x=ticket_dia["data"],
-            y=ticket_dia["ticket_medio"],
+            x=df_plot["data"],
+            y=df_plot["ticket_medio"],
             mode="lines+markers",
             name="Ticket Médio",
             yaxis="y1"
         )
     )
 
-    # Linha 2 - Cupons
+    # Cupons
     fig.add_trace(
         go.Scatter(
-            x=cupons_dia["data"],
-            y=cupons_dia["cupom"],
+            x=df_plot["data"],
+            y=df_plot["cupom"],
             mode="lines+markers",
             name="Cupons",
             yaxis="y2"
@@ -494,15 +597,14 @@ with tab3:
 
     # Layout com dois eixos
     fig.update_layout(
-        yaxis=dict(title="Ticket Médio"),
+        title="Ticket Médio x Cupons por Dia",
+        xaxis_title="Dia do Mês",
+        yaxis=dict(title="Ticket Médio (R$)"),
         yaxis2=dict(
             title="Cupons",
             overlaying="y",
             side="right"
-        ),
-        xaxis=dict(title="Dia do Mês"),
-        legend=dict(x=0.01, y=0.99),
-        height=400
+        )
     )
 
     st.plotly_chart(fig, use_container_width=True)
