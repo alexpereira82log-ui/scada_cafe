@@ -7,7 +7,11 @@ import io
 
 from data.loader import carregar_dados
 from data.tratamento import tratar_dados
-from services.analises import faturamento_por_mes
+from services.analises import (
+    faturamento_por_mes,
+    analise_dia_semana
+)
+    
 from services.calculos import calcular_metricas
 from datetime import datetime
 from services.insights import gerar_insights
@@ -609,6 +613,12 @@ with tab3:
 
     st.plotly_chart(fig, use_container_width=True)
 
+    # =========================
+    # ANALISE DIA DA SEMANA
+    # =========================
+    df_semana = analise_dia_semana(dados, ano)
+
+    st.dataframe(df_semana, use_container_width=True)
 
 # ======================================================
 # ⚠️ PERDAS
