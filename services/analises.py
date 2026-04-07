@@ -216,3 +216,77 @@ def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict)
         "projecao": projecao,
         "total_acumulado": total_acumulado
     }
+
+
+# ============================================================
+# ANALISE DIAS DA SEMANA
+# ============================================================
+
+def analise_dia_semana(dados, ano):
+
+    df = dados["base_fat"].copy()
+    df = df[df["ano"] == ano]
+
+    df["dia_semana"] = df["data"].dt.day_name()
+
+    dias_map = {
+        "Monday": "Segunda-feira",
+        "Tuesday": "Terça-feira",
+        "Wednesday": "Quarta-feira",
+        "Thursday": "Quinta-feira",
+        "Friday": "Sexta-feira",
+        "Saturday": "Sábado",
+        "Sunday": "Domingo"
+    }
+
+    df["dia_semana"] = df["dia_semana"].map(dias_map)
+
+    # 🔹 base diária (ESSENCIAL)
+    df = (
+        df
+        .groupby(["dia_semana", df["data"].dt.date])
+        .agg({
+            "faturamento": "sum",
+            "cupom": "sum"
+        })
+        .reset_index()
+    )
+
+    # 🔹 ticket médio correto
+    df["ticket_medio"] = df.apply(
+        lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
+        axis=1
+    )
+
+    # 🔹 agregação final
+    df = (
+        df
+        .groupby("dia_semana")
+        .agg({
+            "faturamento": "mean",
+            "ticket_medio": "mean",
+            "cupom": "mean"
+        })
+        .reset_index()
+    )
+
+    ordem = [
+        "Segunda-feira", "Terça-feira", "Quarta-feira",
+        "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"
+    ]
+
+    df["dia_semana"] = pd.Categorical(df["dia_semana"], categories=ordem, ordered=True)
+
+    df = df.sort_values("dia_semana")
+
+    df.rename(columns={
+        "faturamento": "faturamento_medio",
+        "ticket_medio": "ticket_medio",
+        "cupom": "media_cupons"
+    }, inplace=True)
+
+    df["faturamento_medio"] = df["faturamento_medio"].round(0).astype(int)
+    df["ticket_medio"] = df["ticket_medio"].round(0).astype(int)
+    df["media_cupons"] = df["media_cupons"].round(0).astype(int)
+
+    return df
