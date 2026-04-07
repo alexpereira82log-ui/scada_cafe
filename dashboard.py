@@ -616,6 +616,8 @@ with tab3:
     # =========================
     # ANALISE DIA DA SEMANA
     # =========================
+    st.markdown("### 📊 Resultado por Dia da Semana")
+
     df_semana = analise_dia_semana(dados, ano)
 
     st.dataframe(df_semana, use_container_width=True)
