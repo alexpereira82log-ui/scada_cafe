@@ -1,6 +1,5 @@
 streamlit
 pandas
-matplotlib
-openpyxl
 plotly
-psycopg2-binary
+google-api-python-client
+google-auth
