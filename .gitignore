@@ -3,3 +3,4 @@ __pycache__/
 .env
 faturamento_scada.db
 senha_email.py
+credentials.json
