@@ -11,7 +11,8 @@ from services.analises import (
     faturamento_por_mes,
     analise_dia_semana
 )
-    
+from data.drive_loader import conectar_drive, listar_arquivos, baixar_arquivo
+from services.relatorios import extrair_indicadores
 from services.calculos import calcular_metricas
 from datetime import datetime
 from services.insights import gerar_insights
@@ -92,12 +93,13 @@ cor_meta = "normal" if atingiu_meta else "inverse"
 # =========================
 # ABAS
 # =========================
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Visão Geral",
     "📈 Faturamento",
     "📌 Projeções",
     "⚠️ Perdas",
     "🏆 Produtos",
+    "📄 Relatório Vendas"
 ])
 
 
@@ -857,3 +859,60 @@ with tab5:
 
     for i in insights:
         st.info(i)
+
+
+# ======================================================
+# 📄 RELATÓRIO VENDAS
+# ======================================================
+with tab6:
+
+    st.subheader("📄 Relatório de Vendas")
+
+    # =========================
+    # 🔗 CONEXÃO COM DRIVE
+    # =========================
+    service = conectar_drive()
+
+    FOLDER_ID = "COLE_AQUI_O_ID_DA_PASTA"
+
+    arquivos = listar_arquivos(service, FOLDER_ID)
+
+    if not arquivos:
+        st.warning("Nenhum relatório encontrado.")
+        st.stop()
+
+    # =========================
+    # 📅 ORDENAR ARQUIVOS (mais recente primeiro)
+    # =========================
+    arquivos = sorted(arquivos, key=lambda x: x["name"], reverse=True)
+
+    nomes = [arq["name"] for arq in arquivos]
+
+    arquivo_sel = st.selectbox("Selecione o relatório", nomes)
+
+    # =========================
+    # 📥 BAIXAR ARQUIVO
+    # =========================
+    file_id = next(arq["id"] for arq in arquivos if arq["name"] == arquivo_sel)
+
+    texto = baixar_arquivo(service, file_id)
+
+    # =========================
+    # 📊 EXTRAÇÃO DE DADOS (BI)
+    # =========================
+    dados = extrair_indicadores(texto)
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Faturamento", f"R$ {dados['faturamento_bruto']:,.0f}")
+    col2.metric("Resultado", f"R$ {dados['resultado_operacional']:,.0f}")
+    col3.metric("Ticket Médio", f"R$ {dados['ticket_medio']:,.0f}")
+    col4.metric("Cupons", f"{dados['cupons']}")
+
+    st.markdown("---")
+
+    # =========================
+    # 📄 RELATÓRIO COMPLETO
+    # =========================
+    with st.expander("📄 Ver relatório completo"):
+        st.text(texto)
