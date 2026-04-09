@@ -757,114 +757,116 @@ with tab5:
 
     if df.empty:
         st.warning("Sem dados de produtos para o período selecionado.")
-        st.stop()
+    else:
 
-    # =========================
-    # AGRUPAMENTO
-    # =========================
-    df_prod = (
-        df
-        .groupby("produto")
-        .agg({
-            "qtd": "sum",
-            "valor_total": "sum"
-        })
-        .reset_index()
-        .sort_values("valor_total", ascending=False)
-    )
+        # =========================
+        # AGRUPAMENTO
+        # =========================
+        df_prod = (
+            df
+            .groupby("produto")
+            .agg({
+                "qtd": "sum",
+                "valor_total": "sum"
+            })
+            .reset_index()
+            .sort_values("valor_total", ascending=False)
+        )
 
-    # =========================
-    # RANKING
-    # =========================
-    st.markdown("### 🏆 Ranking de Produtos")
+        # =========================
+        # RANKING
+        # =========================
+        st.markdown("### 🏆 Ranking de Produtos")
 
-    st.dataframe(
-        df_prod.head(10),
-        use_container_width=True
-    )
+        st.dataframe(
+            df_prod.head(10),
+            use_container_width=True
+        )
 
-    # =========================
-    # GRÁFICO TOP PRODUTOS
-    # =========================
-    import plotly.express as px
+        # =========================
+        # GRÁFICO TOP PRODUTOS
+        # =========================
+        import plotly.express as px
 
-    fig_top = px.bar(
-        df_prod.head(10),
-        x="valor_total",
-        y="produto",
-        orientation="h",
-        text="valor_total"
-    )
+        fig_top = px.bar(
+            df_prod.head(10),
+            x="valor_total",
+            y="produto",
+            orientation="h",
+            text="valor_total"
+        )
 
-    fig_top.update_traces(texttemplate="R$ %{text:,.0f}")
-    fig_top.update_layout(yaxis=dict(autorange="reversed"))
+        fig_top.update_traces(texttemplate="R$ %{text:,.0f}")
+        fig_top.update_layout(yaxis=dict(autorange="reversed"))
 
-    st.plotly_chart(fig_top, use_container_width=True)
+        st.plotly_chart(fig_top, use_container_width=True)
 
-    # =========================
-    # CURVA ABC
-    # =========================
-    st.markdown("### 📈 Curva ABC")
+        # =========================
+        # CURVA ABC
+        # =========================
+        st.markdown("### 📈 Curva ABC")
 
-    df_prod["perc_acumulado"] = (
-        df_prod["valor_total"].cumsum() /
-        df_prod["valor_total"].sum()
-    )
+        df_prod["perc_acumulado"] = (
+            df_prod["valor_total"].cumsum() /
+            df_prod["valor_total"].sum()
+        )
 
-    def classificar_abc(p):
-        if p <= 0.8:
-            return "A"
-        elif p <= 0.95:
-            return "B"
-        else:
-            return "C"
+        def classificar_abc(p):
+            if p <= 0.8:
+                return "A"
+            elif p <= 0.95:
+                return "B"
+            else:
+                return "C"
 
-    df_prod["classe"] = df_prod["perc_acumulado"].apply(classificar_abc)
+        df_prod["classe"] = df_prod["perc_acumulado"].apply(classificar_abc)
 
-    fig_abc = px.line(
-        df_prod,
-        x=range(len(df_prod)),
-        y="perc_acumulado"
-    )
+        fig_abc = px.line(
+            df_prod,
+            x=range(len(df_prod)),
+            y="perc_acumulado"
+        )
 
-    st.plotly_chart(fig_abc, use_container_width=True)
+        st.plotly_chart(fig_abc, use_container_width=True)
 
-    st.dataframe(
-        df_prod[["produto", "valor_total", "classe"]],
-        use_container_width=True
-    )
+        st.dataframe(
+            df_prod[["produto", "valor_total", "classe"]],
+            use_container_width=True
+        )
 
-    # =========================
-    # INSIGHTS AUTOMÁTICOS
-    # =========================
-    st.markdown("### 🧠 Insights Automáticos")
+        # =========================
+        # INSIGHTS AUTOMÁTICOS
+        # =========================
+        st.markdown("### 🧠 Insights Automáticos")
 
-    top1 = df_prod.iloc[0]
+        top1 = df_prod.iloc[0]
 
-    perc_top1 = top1["valor_total"] / df_prod["valor_total"].sum()
+        perc_top1 = top1["valor_total"] / df_prod["valor_total"].sum()
 
-    insights = []
+        insights = []
 
-    if perc_top1 > 0.25:
-        insights.append("Alta dependência de um único produto.")
+        if perc_top1 > 0.25:
+            insights.append("Alta dependência de um único produto.")
 
-    if len(df_prod[df_prod["classe"] == "A"]) < 5:
-        insights.append("Poucos produtos representam a maior parte da receita.")
+        if len(df_prod[df_prod["classe"] == "A"]) < 5:
+            insights.append("Poucos produtos representam a maior parte da receita.")
 
-    if df_prod["qtd"].mean() < 5:
-        insights.append("Baixo volume médio de vendas por produto.")
+        if df_prod["qtd"].mean() < 5:
+            insights.append("Baixo volume médio de vendas por produto.")
 
-    if not insights:
-        insights.append("Mix de produtos equilibrado.")
+        if not insights:
+            insights.append("Mix de produtos equilibrado.")
 
-    for i in insights:
-        st.info(i)
+        for i in insights:
+            st.info(i)
 
 
 # ======================================================
 # 📄 RELATÓRIO VENDAS
 # ======================================================
 with tab6:
+
+    st.write("🚀 Entrou na aba 6")
 
     st.subheader("📄 Relatório de Vendas")
 
@@ -873,46 +875,46 @@ with tab6:
     # =========================
     service = conectar_drive()
 
-    FOLDER_ID = "COLE_AQUI_O_ID_DA_PASTA"
+    FOLDER_ID = "1C0SSV4vrFhY9L1jYhpW7Mc8PzCVJGgmo"
 
     arquivos = listar_arquivos(service, FOLDER_ID)
 
     if not arquivos:
         st.warning("Nenhum relatório encontrado.")
-        st.stop()
+    else:
 
-    # =========================
-    # 📅 ORDENAR ARQUIVOS (mais recente primeiro)
-    # =========================
-    arquivos = sorted(arquivos, key=lambda x: x["name"], reverse=True)
+        # =========================
+        # 📅 ORDENAR ARQUIVOS (mais recente primeiro)
+        # =========================
+        arquivos = sorted(arquivos, key=lambda x: x["name"], reverse=True)
 
-    nomes = [arq["name"] for arq in arquivos]
+        nomes = [arq["name"] for arq in arquivos]
 
-    arquivo_sel = st.selectbox("Selecione o relatório", nomes)
+        arquivo_sel = st.selectbox("Selecione o relatório", nomes)
 
-    # =========================
-    # 📥 BAIXAR ARQUIVO
-    # =========================
-    file_id = next(arq["id"] for arq in arquivos if arq["name"] == arquivo_sel)
+        # =========================
+        # 📥 BAIXAR ARQUIVO
+        # =========================
+        file_id = next(arq["id"] for arq in arquivos if arq["name"] == arquivo_sel)
 
-    texto = baixar_arquivo(service, file_id)
+        texto = baixar_arquivo(service, file_id)
 
-    # =========================
-    # 📊 EXTRAÇÃO DE DADOS (BI)
-    # =========================
-    dados = extrair_indicadores(texto)
+        # =========================
+        # 📊 EXTRAÇÃO DE DADOS (BI)
+        # =========================
+        indicadores = extrair_indicadores(texto)
 
-    col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric("Faturamento", f"R$ {dados['faturamento_bruto']:,.0f}")
-    col2.metric("Resultado", f"R$ {dados['resultado_operacional']:,.0f}")
-    col3.metric("Ticket Médio", f"R$ {dados['ticket_medio']:,.0f}")
-    col4.metric("Cupons", f"{dados['cupons']}")
+        col1.metric("Faturamento", f"R$ {indicadores['faturamento_bruto']:,.0f}")
+        col2.metric("Resultado", f"R$ {indicadores['resultado_operacional']:,.0f}")
+        col3.metric("Ticket Médio", f"R$ {indicadores['ticket_medio']:,.0f}")
+        col4.metric("Cupons", f"{indicadores['cupons']}")
 
-    st.markdown("---")
+        st.markdown("---")
 
-    # =========================
-    # 📄 RELATÓRIO COMPLETO
-    # =========================
-    with st.expander("📄 Ver relatório completo"):
-        st.text(texto)
+        # =========================
+        # 📄 RELATÓRIO COMPLETO
+        # =========================
+        with st.expander("📄 Ver relatório completo"):
+            st.text(texto)
