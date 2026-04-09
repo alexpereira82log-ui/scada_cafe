@@ -4,18 +4,29 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
+
+
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
 def conectar_drive():
-    creds = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
-    scopes=SCOPES
-)
+
+    try:
+        # 🔐 Produção (Streamlit Cloud)
+        creds = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=SCOPES
+        )
+
+    except Exception:
+        # 💻 Ambiente local
+        creds = service_account.Credentials.from_service_account_file(
+            "credentials.json",
+            scopes=SCOPES
+        )
 
     service = build('drive', 'v3', credentials=creds)
     return service
-
 
 def listar_arquivos(service, folder_id):
     results = service.files().list(
