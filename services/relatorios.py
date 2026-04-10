@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 
+from data.drive_loader import conectar_drive, listar_arquivos, baixar_arquivo
 
 # =========================
 # 📥 EXPORTAÇÃO
@@ -48,3 +49,22 @@ def extrair_indicadores(texto):
     dados["cupons"] = int(match_tc.group(1)) if match_tc else 0
 
     return dados
+
+
+# =========================
+# 📊 RELATORIO POR DATA:
+# =========================
+def carregar_relatorio_por_data(data_input: str, folder_id: str):
+
+    service = conectar_drive()
+    arquivos = listar_arquivos(service, folder_id)
+
+    if not arquivos:
+        return None, "Nenhum arquivo encontrado no Drive."
+
+    for arq in arquivos:
+        if data_input in arq["name"]:
+            texto = baixar_arquivo(service, arq["id"])
+            return texto, arq["name"]
+
+    return None, f"Nenhum relatório encontrado para a data {data_input}"

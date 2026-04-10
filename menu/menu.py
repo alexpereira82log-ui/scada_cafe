@@ -11,6 +11,7 @@ from services.analises import (
     calcular_comissao_projecoes
 )
 
+from services.relatorios import carregar_relatorio_por_data
 
 def aguardar_comando():
     input("\nPressione ENTER para voltar ao menu...")
@@ -88,6 +89,27 @@ def mostrar_comissao_projecoes(dados, ano, mes, metricas):
     print("-" * 50)
 
 
+def mostrar_resumo_relatorio():
+
+    print("\n📄 RESUMO DE RELATÓRIO\n")
+
+    data_input = input("Digite a data (YYYY-MM-DD): ").strip()
+
+    FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
+
+    texto, info = carregar_relatorio_por_data(data_input, FOLDER_ID)
+
+    if texto is None:
+        print(f"❌ {info}")
+        return
+
+    print(f"\n✅ Arquivo encontrado: {info}")
+    print("\n📄 Conteúdo carregado com sucesso!\n")
+
+    # TEMPORÁRIO (debug)
+    print(texto[:1000])
+
+
 # ============================================================
 # MENU PRINCIPAL
 # ============================================================
@@ -106,6 +128,7 @@ def iniciar_menu(dados, ano, mes, metricas):
         print("5 - Perdas Mês a Mês")
         print("6 - Perdas por Motivo (Mês atual)")
         print("7 - Comissão e Projeções")
+        print("8 - Resumo de relatório diário")
         print("x - Sair")
 
         escolha = input("Escolha uma opção: ").strip()
@@ -122,6 +145,7 @@ def iniciar_menu(dados, ano, mes, metricas):
             "5": lambda: mostrar_perdas_mes(dados, ano),
             "6": lambda: mostrar_perdas_motivo(dados, ano, mes),
             "7": lambda: mostrar_comissao_projecoes(dados, ano, mes, metricas),
+            "8": lambda: mostrar_resumo_relatorio(),
         }
 
         if escolha.lower() == "x":
