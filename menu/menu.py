@@ -11,7 +11,12 @@ from services.analises import (
     calcular_comissao_projecoes
 )
 
-from services.relatorios import carregar_relatorio_por_data
+from services.relatorios import (
+    carregar_relatorio_por_data,
+    extrair_resumo_relatorio,
+    extrair_cancelamentos,
+    formatar_tabela_cancelamentos
+)
 
 def aguardar_comando():
     input("\nPressione ENTER para voltar ao menu...")
@@ -104,10 +109,49 @@ def mostrar_resumo_relatorio():
         return
 
     print(f"\n✅ Arquivo encontrado: {info}")
-    print("\n📄 Conteúdo carregado com sucesso!\n")
 
-    # TEMPORÁRIO (debug)
-    print(texto[:1000])
+    # =========================
+    # 📊 EXTRAÇÃO DE DADOS
+    # =========================
+    dados = extrair_resumo_relatorio(texto)
+
+    cancel_antes = extrair_cancelamentos(texto, "antes")
+    cancel_depois = extrair_cancelamentos(texto, "depois")
+
+    tabela_antes = formatar_tabela_cancelamentos(cancel_antes)
+    tabela_depois = formatar_tabela_cancelamentos(cancel_depois)
+
+    # =========================
+    # 📅 FORMATAÇÃO DATA
+    # =========================
+    try:
+        ano, mes, dia = data_input.split("-")
+        data_formatada = f"{dia}/{mes}/{ano}"
+    except:
+        data_formatada = data_input
+
+    # =========================
+    # 📄 RELATÓRIO FINAL
+    # =========================
+    print("\n" + "=" * 50)
+    print("INICIO DO RELATORIO\n")
+
+    print(f"Data: {data_formatada}")
+    print(f"Faturamento bruto: {dados['faturamento_bruto']}")
+    print(f"Tx. Serv Mesa: {dados['tx_servico']}")
+    print(f"TC-Total Cupom: {dados['tc']}")
+    print(f"TM-Ticket Medio por Cupom: {dados['tm']}\n")
+
+    print("CANCELAMENTO VENDA MESA (ANTES ENVIAR PRODUCAO):")
+    print(tabela_antes)
+    print('- Justificativa: "Escreva aqui sua justificativa"\n')
+
+    print("CANCELAMENTO VENDA MESA (DEPOIS ENVIAR PRODUCAO):")
+    print(tabela_depois)
+    print('- Justificativa: "Escreva aqui sua justificativa"\n')
+
+    print("FIM DO RELATORIO")
+    print("=" * 50 + "\n")
 
 
 # ============================================================
