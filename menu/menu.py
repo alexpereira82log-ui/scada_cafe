@@ -11,6 +11,12 @@ from services.analises import (
     calcular_comissao_projecoes
 )
 
+from services.relatorios import (
+    carregar_relatorio_por_data,
+    extrair_resumo_relatorio,
+    extrair_cancelamentos,
+    formatar_tabela_cancelamentos
+)
 
 def aguardar_comando():
     input("\nPressione ENTER para voltar ao menu...")
@@ -88,6 +94,66 @@ def mostrar_comissao_projecoes(dados, ano, mes, metricas):
     print("-" * 50)
 
 
+def mostrar_resumo_relatorio():
+
+    print("\n📄 RESUMO DE RELATÓRIO\n")
+
+    data_input = input("Digite a data (YYYY-MM-DD): ").strip()
+
+    FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
+
+    texto, info = carregar_relatorio_por_data(data_input, FOLDER_ID)
+
+    if texto is None:
+        print(f"❌ {info}")
+        return
+
+    print(f"\n✅ Arquivo encontrado: {info}")
+
+    # =========================
+    # 📊 EXTRAÇÃO DE DADOS
+    # =========================
+    dados = extrair_resumo_relatorio(texto)
+
+    cancel_antes = extrair_cancelamentos(texto, "antes")
+    cancel_depois = extrair_cancelamentos(texto, "depois")
+
+    tabela_antes = formatar_tabela_cancelamentos(cancel_antes)
+    tabela_depois = formatar_tabela_cancelamentos(cancel_depois)
+
+    # =========================
+    # 📅 FORMATAÇÃO DATA
+    # =========================
+    try:
+        ano, mes, dia = data_input.split("-")
+        data_formatada = f"{dia}/{mes}/{ano}"
+    except:
+        data_formatada = data_input
+
+    # =========================
+    # 📄 RELATÓRIO FINAL
+    # =========================
+    print("\n" + "=" * 50)
+    print("INICIO DO RELATORIO\n")
+
+    print(f"Data: {data_formatada}")
+    print(f"Faturamento bruto: {dados['faturamento_bruto']}")
+    print(f"Tx. Serv Mesa: {dados['tx_servico']}")
+    print(f"TC-Total Cupom: {dados['tc']}")
+    print(f"TM-Ticket Medio por Cupom: {dados['tm']}\n")
+
+    print("CANCELAMENTO VENDA MESA (ANTES ENVIAR PRODUCAO):")
+    print(tabela_antes)
+    print('- Justificativa: "Escreva aqui sua justificativa"\n')
+
+    print("CANCELAMENTO VENDA MESA (DEPOIS ENVIAR PRODUCAO):")
+    print(tabela_depois)
+    print('- Justificativa: "Escreva aqui sua justificativa"\n')
+
+    print("FIM DO RELATORIO")
+    print("=" * 50 + "\n")
+
+
 # ============================================================
 # MENU PRINCIPAL
 # ============================================================
@@ -106,6 +172,7 @@ def iniciar_menu(dados, ano, mes, metricas):
         print("5 - Perdas Mês a Mês")
         print("6 - Perdas por Motivo (Mês atual)")
         print("7 - Comissão e Projeções")
+        print("8 - Resumo de relatório diário")
         print("x - Sair")
 
         escolha = input("Escolha uma opção: ").strip()
@@ -122,6 +189,7 @@ def iniciar_menu(dados, ano, mes, metricas):
             "5": lambda: mostrar_perdas_mes(dados, ano),
             "6": lambda: mostrar_perdas_motivo(dados, ano, mes),
             "7": lambda: mostrar_comissao_projecoes(dados, ano, mes, metricas),
+            "8": lambda: mostrar_resumo_relatorio(),
         }
 
         if escolha.lower() == "x":

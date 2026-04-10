@@ -290,3 +290,5 @@ def analise_dia_semana(dados, ano):
     df["media_cupons"] = df["media_cupons"].round(0).astype(int)
 
     return df
+
+
