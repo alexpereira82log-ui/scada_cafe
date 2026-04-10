@@ -739,126 +739,190 @@ with tab4:
 
 
 # ======================================================
-# 🏆 PRODUTOS
+# 🏆 PRODUTOS (NOVA VERSÃO COMPLETA)
 # ======================================================
 with tab5:
 
-    st.subheader("📊 Performance de Produtos")
+    import pandas as pd
+    import plotly.express as px
 
-    df = dados["base_produtos"].copy()
+    from services.relatorios import (
+        conectar_drive,
+        listar_arquivos,
+        baixar_arquivo,
+        extrair_produtos_relatorio
+    )
+
+    st.subheader("🏆 Análise de Produtos (Relatório Diário)")
 
     # =========================
-    # FILTRO
+    # MODO DE ANÁLISE
     # =========================
-    df = df[
-        (df["ano"] == ano) &
-        (df["mes"] == mes)
-    ]
+    modo = st.radio(
+        "Modo de análise",
+        ["📊 Acumulado", "📅 Dia específico"],
+        horizontal=True
+    )
 
-    if df.empty:
-        st.warning("Sem dados de produtos para o período selecionado.")
+    # =========================
+    # CONEXÃO DRIVE
+    # =========================
+    service = conectar_drive()
+    FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
+    arquivos = listar_arquivos(service, FOLDER_ID)
+
+    if not arquivos:
+        st.warning("Nenhum relatório encontrado.")
+        st.stop()
+
+    # =========================
+    # 📊 MODO ACUMULADO
+    # =========================
+    if modo == "📊 Acumulado":
+
+        lista_df = []
+
+        for arq in arquivos:
+            texto = baixar_arquivo(service, arq["id"])
+            df_temp = extrair_produtos_relatorio(texto)
+
+            if not df_temp.empty:
+                lista_df.append(df_temp)
+
+        if not lista_df:
+            st.warning("Nenhum dado encontrado nos relatórios.")
+            st.stop()
+
+        df_prod = pd.concat(lista_df, ignore_index=True)
+
+    # =========================
+    # 📅 MODO DIA ESPECÍFICO
+    # =========================
     else:
 
-        # =========================
-        # AGRUPAMENTO
-        # =========================
-        df_prod = (
-            df
-            .groupby("produto")
-            .agg({
-                "qtd": "sum",
-                "valor_total": "sum"
-            })
-            .reset_index()
-            .sort_values("valor_total", ascending=False)
+        nomes = [a["name"] for a in arquivos]
+
+        arquivo_sel = st.selectbox(
+            "Selecione o relatório",
+            nomes,
+            key="select_relatorio_produtos"
         )
 
-        # =========================
-        # RANKING
-        # =========================
-        st.markdown("### 🏆 Ranking de Produtos")
+        arquivo = next(a for a in arquivos if a["name"] == arquivo_sel)
 
-        st.dataframe(
-            df_prod.head(10),
-            use_container_width=True
-        )
+        texto = baixar_arquivo(service, arquivo["id"])
+        df_prod = extrair_produtos_relatorio(texto)
 
-        # =========================
-        # GRÁFICO TOP PRODUTOS
-        # =========================
-        import plotly.express as px
+        if df_prod.empty:
+            st.warning("Nenhum produto encontrado no relatório.")
+            st.stop()
 
-        fig_top = px.bar(
-            df_prod.head(10),
-            x="valor_total",
-            y="produto",
-            orientation="h",
-            text="valor_total"
-        )
+    # =========================
+    # AGRUPAMENTO
+    # =========================
+    df_prod = (
+        df_prod
+        .groupby("produto")
+        .agg({
+            "qtd": "sum",
+            "valor_total": "sum"
+        })
+        .reset_index()
+        .sort_values("valor_total", ascending=False)
+    )
 
-        fig_top.update_traces(texttemplate="R$ %{text:,.0f}")
-        fig_top.update_layout(yaxis=dict(autorange="reversed"))
+    total = df_prod["valor_total"].sum()
+    df_prod["participacao"] = df_prod["valor_total"] / total
+    df_prod["perc"] = df_prod["participacao"] * 100
 
-        st.plotly_chart(fig_top, use_container_width=True)
+    # =========================
+    # 🏆 TOP PRODUTOS
+    # =========================
+    st.markdown("### 🏆 Top Produtos")
 
-        # =========================
-        # CURVA ABC
-        # =========================
-        st.markdown("### 📈 Curva ABC")
+    st.dataframe(
+        df_prod.head(10),
+        use_container_width=True
+    )
 
-        df_prod["perc_acumulado"] = (
-            df_prod["valor_total"].cumsum() /
-            df_prod["valor_total"].sum()
-        )
+    # =========================
+    # 📊 GRÁFICO
+    # =========================
+    fig = px.bar(
+        df_prod.head(10),
+        x="valor_total",
+        y="produto",
+        orientation="h",
+        text="valor_total"
+    )
 
-        def classificar_abc(p):
-            if p <= 0.8:
-                return "A"
-            elif p <= 0.95:
-                return "B"
-            else:
-                return "C"
+    fig.update_layout(yaxis=dict(autorange="reversed"))
 
-        df_prod["classe"] = df_prod["perc_acumulado"].apply(classificar_abc)
+    st.plotly_chart(fig, use_container_width=True)
 
-        fig_abc = px.line(
-            df_prod,
-            x=range(len(df_prod)),
-            y="perc_acumulado"
-        )
+    # =========================
+    # 📊 PARTICIPAÇÃO
+    # =========================
+    st.markdown("### 📊 Participação (%)")
 
-        st.plotly_chart(fig_abc, use_container_width=True)
+    st.dataframe(
+        df_prod[["produto", "valor_total", "perc"]],
+        use_container_width=True
+    )
 
-        st.dataframe(
-            df_prod[["produto", "valor_total", "classe"]],
-            use_container_width=True
-        )
+    # =========================
+    # 📈 CURVA ABC
+    # =========================
+    st.markdown("### 📈 Curva ABC")
 
-        # =========================
-        # INSIGHTS AUTOMÁTICOS
-        # =========================
-        st.markdown("### 🧠 Insights Automáticos")
+    df_prod["perc_acum"] = df_prod["participacao"].cumsum()
 
-        top1 = df_prod.iloc[0]
+    def classificar(p):
+        if p <= 0.8:
+            return "A"
+        elif p <= 0.95:
+            return "B"
+        else:
+            return "C"
 
-        perc_top1 = top1["valor_total"] / df_prod["valor_total"].sum()
+    df_prod["classe"] = df_prod["perc_acum"].apply(classificar)
 
-        insights = []
+    st.dataframe(
+        df_prod[["produto", "valor_total", "classe"]],
+        use_container_width=True
+    )
 
-        if perc_top1 > 0.25:
-            insights.append("Alta dependência de um único produto.")
+    # =========================
+    # 🧠 INSIGHTS
+    # =========================
+    insights = []
 
-        if len(df_prod[df_prod["classe"] == "A"]) < 5:
-            insights.append("Poucos produtos representam a maior parte da receita.")
+    top1 = df_prod.iloc[0]
+    perc_top1 = top1["participacao"]
 
-        if df_prod["qtd"].mean() < 5:
-            insights.append("Baixo volume médio de vendas por produto.")
+    # Regra principal
+    if perc_top1 > 0.25:
+        insights.append("⚠️ Alta dependência de um único produto.")
+    elif perc_top1 > 0.15:
+        insights.append("🔎 Produto líder com boa relevância no faturamento.")
+    else:
+        insights.append("✅ Boa distribuição de vendas entre produtos.")
 
-        if not insights:
-            insights.append("Mix de produtos equilibrado.")
+    # Curva ABC
+    qtd_a = len(df_prod[df_prod["classe"] == "A"])
 
-        for i in insights:
-            st.info(i)
+    if qtd_a < 5:
+        insights.append("⚠️ Poucos produtos concentram a maior parte da receita.")
+    elif qtd_a > 10:
+        insights.append("📊 Mix amplo de produtos com impacto relevante.")
+
+    # =========================
+    # EXIBIÇÃO
+    # =========================
+    st.markdown("### 🧠 Insights")
+
+    for i in insights:
+        st.info(i)
 
 
 # ======================================================

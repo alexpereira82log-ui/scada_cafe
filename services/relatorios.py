@@ -149,3 +149,62 @@ def formatar_tabela_cancelamentos(lista):
             continue
 
     return "\n".join(linhas_formatadas)
+
+
+# ====================================
+# 📊 EXTRAIR PRODUTOS RELATORIO:
+# ====================================
+def extrair_produtos_relatorio(texto):
+
+    import pandas as pd
+
+    linhas = texto.split("\n")
+
+    capturar = False
+    dados = []
+
+    for linha in linhas:
+
+        # 🔥 INÍCIO CORRETO
+        if "MOVIMENTACAO DE PRODUTO" in linha:
+            capturar = True
+            continue
+
+        if capturar:
+
+            # 🔴 FIM DA SEÇÃO
+            if "Periodo" in linha:
+                break
+
+            linha = linha.strip()
+
+            # Ignorar linhas vazias ou separadores
+            if not linha or linha.startswith("-"):
+                continue
+
+            # Captura linhas com dados (começam com código numérico)
+            if linha[0].isdigit():
+
+                partes = linha.split()
+
+                try:
+                    codigo = partes[0]
+
+                    # Nome do produto (entre código e qtd)
+                    nome = " ".join(partes[1:-3])
+
+                    qtd = int(partes[-3])
+
+                    valor = float(partes[-2].replace(",", "."))
+
+                    dados.append({
+                        "produto": nome,
+                        "qtd": qtd,
+                        "valor_total": valor
+                    })
+
+                except:
+                    continue
+
+    return pd.DataFrame(dados)
+

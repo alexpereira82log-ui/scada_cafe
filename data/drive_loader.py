@@ -48,4 +48,12 @@ def baixar_arquivo(service, file_id):
         _, done = downloader.next_chunk()
 
     file.seek(0)
-    return file.read().decode("utf-8")
+    conteudo = file.read()
+
+    try:
+        return conteudo.decode("utf-8")
+    except UnicodeDecodeError:
+        try:
+            return conteudo.decode("latin-1")
+        except:
+            return conteudo.decode("cp1252")
