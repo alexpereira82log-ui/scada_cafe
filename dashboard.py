@@ -17,6 +17,7 @@ from services.calculos import calcular_metricas
 from datetime import datetime
 from services.insights import gerar_insights
 
+from services.relatorios import extrair_produtos_relatorio
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -742,16 +743,6 @@ with tab4:
 # 🏆 PRODUTOS (NOVA VERSÃO COMPLETA)
 # ======================================================
 with tab5:
-
-    import pandas as pd
-    import plotly.express as px
-
-    from services.relatorios import (
-        conectar_drive,
-        listar_arquivos,
-        baixar_arquivo,
-        extrair_produtos_relatorio
-    )
 
     st.subheader("🏆 Análise de Produtos (Relatório Diário)")
 
