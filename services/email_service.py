@@ -1,64 +1,24 @@
+import os
 import smtplib
 from email.message import EmailMessage
-import os
-
-from senha_email import senha_app  # mantém seu padrão atual
 
 
-EMAIL_REMETENTE = "alex.pereira82log@gmail.com"
-EMAIL_DESTINOS = ["alex.barista@icloud.com"]
-
-# ====================================
-# ENVIAR EMAIL COM ANEXO:
-# ====================================
-def enviar_email_com_anexo(caminho_arquivo: str):
-    try:
-        msg = EmailMessage()
-
-        nome_arquivo = os.path.basename(caminho_arquivo)
-
-        msg["Subject"] = f"Relatório - {nome_arquivo}"
-        msg["From"] = EMAIL_REMETENTE
-        msg["To"] = ", ".join(EMAIL_DESTINOS)
-
-        msg.set_content("Segue relatório em anexo.")
-
-        with open(caminho_arquivo, "rb") as f:
-            msg.add_attachment(
-                f.read(),
-                maintype="application",
-                subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                filename=nome_arquivo
-            )
-
-        servidor = smtplib.SMTP("smtp.gmail.com", 587)
-        servidor.starttls()
-        servidor.login(EMAIL_REMETENTE, senha_app)
-        servidor.send_message(msg)
-        servidor.quit()
-
-        print("Email enviado com sucesso!")
-
-    except Exception as e:
-        print(f"Erro ao enviar email: {e}")
-
-
-
-
-# ====================================
-# ENVIAR EMAIL COMISSÃO:
-# ====================================
 def enviar_email_com_anexo(arquivo):
 
-    EMAIL = "alex.pereira82log@gmail.com"
-    SENHA = senha_app
+    EMAIL = os.getenv("EMAIL_USER")
+    SENHA = os.getenv("EMAIL_PASS")
+
+    if not EMAIL or not SENHA:
+        raise Exception("Credenciais de email não configuradas.")
 
     msg = EmailMessage()
     msg["Subject"] = "Relatório de Comissão"
     msg["From"] = EMAIL
     msg["To"] = "alex.barista@icloud.com"
 
-    msg.set_content("Segue em anexo o relatório de comissão.")
+    msg.set_content(
+        "Segue em anexo o relatório de comissão do período selecionado."
+    )
 
     with open(arquivo, "rb") as f:
         file_data = f.read()
@@ -71,6 +31,13 @@ def enviar_email_com_anexo(arquivo):
         filename=file_name
     )
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(EMAIL, SENHA)
-        smtp.send_message(msg)
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(EMAIL, SENHA)
+            smtp.send_message(msg)
+
+        print("📧 Email enviado com sucesso!")
+
+    except Exception as e:
+        print("❌ Erro ao enviar email:")
+        print(e)
