@@ -297,13 +297,45 @@ def analise_dia_semana(dados, ano):
 # ============================================================
 def comissao_por_dia_colaborador(dados, ano, mes):
 
-    df = dados["base_comissoes"].copy()
+    df = dados["base_comissao"].copy()
+    df_colab = dados["base_colaboradores"].copy()
 
+    if df.empty:
+        return df
+
+    # =========================
+    # FILTRO
+    # =========================
     df = df[
         (df["ano"] == ano) &
         (df["mes"] == mes)
     ]
 
+    # =========================
+    # TOTAL DO DIA (ANTES DO RATEIO)
+    # =========================
+    total_dia = (
+        df
+        .groupby("data")["valor"]
+        .sum()
+        .rename("Comissao_dia")
+    )
+
+    # =========================
+    # JOIN COM COLABORADORES
+    # =========================
+    df = df.merge(
+        df_colab,
+        left_on="colaborador_id",
+        right_on="id",
+        how="left"
+    )
+
+    df = df.rename(columns={"nome": "colaborador"})
+
+    # =========================
+    # AGRUPAMENTO
+    # =========================
     df_group = (
         df
         .groupby(["data", "colaborador"])["valor"]
@@ -311,14 +343,37 @@ def comissao_por_dia_colaborador(dados, ano, mes):
         .reset_index()
     )
 
-    # Pivot (linhas = data, colunas = colaboradores)
+    # =========================
+    # PIVOT
+    # =========================
     df_pivot = df_group.pivot(
         index="data",
         columns="colaborador",
         values="valor"
     ).fillna(0)
 
+    # =========================
+    # ADICIONAR COLUNA TOTAL DIA
+    # =========================
+    df_pivot = df_pivot.merge(
+        total_dia,
+        left_index=True,
+        right_index=True
+    )
+
+    # 🔥 COLOCAR COMO SEGUNDA COLUNA
+    cols = df_pivot.columns.tolist()
+    cols.insert(0, cols.pop(cols.index("Comissao_dia")))
+    df_pivot = df_pivot[cols]
+
+    # =========================
+    # FORMATAR DATA
+    # =========================
+    df_pivot.index = df_pivot.index.strftime("%Y-%m-%d")
+
+    # =========================
+    # ORDENAR
+    # =========================
     df_pivot = df_pivot.sort_index()
 
     return df_pivot
-

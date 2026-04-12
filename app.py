@@ -4,6 +4,7 @@ from data.tratamento import tratar_dados
 from services.calculos import calcular_metricas
 from data.drive_loader import conectar_drive, listar_arquivos, baixar_arquivo
 
+
 def obter_input_usuario():
     """
     Captura e valida o input do usuário (ano e mês).

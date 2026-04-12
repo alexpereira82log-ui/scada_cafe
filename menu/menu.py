@@ -113,7 +113,7 @@ def mostrar_relatorio_comissao(dados, ano, mes):
 
     print(f"✅ Excel gerado: {arquivo}")
 
-    enviar_email_com_anexo(arquivo)
+    #enviar_email_com_anexo(arquivo)
 
     print("📧 Email enviado com sucesso!")
 
@@ -230,6 +230,3 @@ def iniciar_menu(dados, ano, mes, metricas):
             time.sleep(1)
 
 
-# ============================================================
-# MOSTRAR RELATORIO COMISSAO
-# ============================================================
