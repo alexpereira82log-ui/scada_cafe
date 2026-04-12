@@ -2,6 +2,8 @@ import pandas as pd
 import re
 
 from data.drive_loader import conectar_drive, listar_arquivos, baixar_arquivo
+from openpyxl import Workbook
+from openpyxl.styles import Font
 
 # =========================
 # 📥 EXPORTAÇÃO
@@ -208,3 +210,43 @@ def extrair_produtos_relatorio(texto):
 
     return pd.DataFrame(dados)
 
+
+# ====================================
+# 📊 FORMATAR COMO TABELA:
+# ====================================
+def gerar_excel_comissao(df, nome_arquivo="relatorio_comissao.xlsx"):
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Comissão"
+
+    bold = Font(bold=True)
+
+    # Cabeçalho
+    ws.cell(row=1, column=1, value="Data").font = bold
+
+    for col_idx, col_name in enumerate(df.columns, start=2):
+        cell = ws.cell(row=1, column=col_idx, value=col_name)
+        cell.font = bold
+
+    # Dados
+    for row_idx, (data, row) in enumerate(df.iterrows(), start=2):
+
+        cell = ws.cell(row=row_idx, column=1, value=str(data))
+        cell.font = bold
+
+        for col_idx, value in enumerate(row, start=2):
+            ws.cell(row=row_idx, column=col_idx, value=round(value, 2))
+
+    # Linha TOTAL
+    total_row = len(df) + 2
+    ws.cell(row=total_row, column=1, value="TOTAL").font = bold
+
+    for col_idx, col_name in enumerate(df.columns, start=2):
+        total = df[col_name].sum()
+        cell = ws.cell(row=total_row, column=col_idx, value=round(total, 2))
+        cell.font = bold
+
+    wb.save(nome_arquivo)
+
+    return nome_arquivo

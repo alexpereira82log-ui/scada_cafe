@@ -1,6 +1,11 @@
 import os
 import time
 
+from services.analises import comissao_por_dia_colaborador
+from services.relatorios import gerar_excel_comissao
+from services.email_service import enviar_email_com_anexo
+
+
 from services.analises import (
     faturamento_por_mes,
     faturamento_por_dia,
@@ -94,6 +99,25 @@ def mostrar_comissao_projecoes(dados, ano, mes, metricas):
     print("-" * 50)
 
 
+def mostrar_relatorio_comissao(dados, ano, mes):
+
+    print("\n📄 GERANDO RELATÓRIO DE COMISSÃO...\n")
+
+    df = comissao_por_dia_colaborador(dados, ano, mes)
+
+    if df.empty:
+        print("❌ Sem dados de comissão.")
+        return
+
+    arquivo = gerar_excel_comissao(df)
+
+    print(f"✅ Excel gerado: {arquivo}")
+
+    enviar_email_com_anexo(arquivo)
+
+    print("📧 Email enviado com sucesso!")
+
+
 def mostrar_resumo_relatorio():
 
     print("\n📄 RESUMO DE RELATÓRIO\n")
@@ -173,6 +197,7 @@ def iniciar_menu(dados, ano, mes, metricas):
         print("6 - Perdas por Motivo (Mês atual)")
         print("7 - Comissão e Projeções")
         print("8 - Resumo de relatório diário")
+        print("9 - Relatório Comissão")
         print("x - Sair")
 
         escolha = input("Escolha uma opção: ").strip()
@@ -190,6 +215,7 @@ def iniciar_menu(dados, ano, mes, metricas):
             "6": lambda: mostrar_perdas_motivo(dados, ano, mes),
             "7": lambda: mostrar_comissao_projecoes(dados, ano, mes, metricas),
             "8": lambda: mostrar_resumo_relatorio(),
+            "9": lambda: mostrar_relatorio_comissao(dados, ano, mes),
         }
 
         if escolha.lower() == "x":
@@ -204,3 +230,6 @@ def iniciar_menu(dados, ano, mes, metricas):
             time.sleep(1)
 
 
+# ============================================================
+# MOSTRAR RELATORIO COMISSAO
+# ============================================================

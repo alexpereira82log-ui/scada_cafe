@@ -8,7 +8,9 @@ from senha_email import senha_app  # mantém seu padrão atual
 EMAIL_REMETENTE = "alex.pereira82log@gmail.com"
 EMAIL_DESTINOS = ["alex.barista@icloud.com"]
 
-
+# ====================================
+# ENVIAR EMAIL COM ANEXO:
+# ====================================
 def enviar_email_com_anexo(caminho_arquivo: str):
     try:
         msg = EmailMessage()
@@ -39,3 +41,36 @@ def enviar_email_com_anexo(caminho_arquivo: str):
 
     except Exception as e:
         print(f"Erro ao enviar email: {e}")
+
+
+
+
+# ====================================
+# ENVIAR EMAIL COMISSÃO:
+# ====================================
+def enviar_email_com_anexo(arquivo):
+
+    EMAIL = "alex.pereira82log@gmail.com"
+    SENHA = senha_app
+
+    msg = EmailMessage()
+    msg["Subject"] = "Relatório de Comissão"
+    msg["From"] = EMAIL
+    msg["To"] = "alex.barista@icloud.com"
+
+    msg.set_content("Segue em anexo o relatório de comissão.")
+
+    with open(arquivo, "rb") as f:
+        file_data = f.read()
+        file_name = f.name
+
+    msg.add_attachment(
+        file_data,
+        maintype="application",
+        subtype="octet-stream",
+        filename=file_name
+    )
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(EMAIL, SENHA)
+        smtp.send_message(msg)

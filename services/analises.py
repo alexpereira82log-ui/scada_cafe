@@ -292,3 +292,33 @@ def analise_dia_semana(dados, ano):
     return df
 
 
+# ============================================================
+# ANALISE COMISSAO POR DIA COLABORADOR
+# ============================================================
+def comissao_por_dia_colaborador(dados, ano, mes):
+
+    df = dados["base_comissoes"].copy()
+
+    df = df[
+        (df["ano"] == ano) &
+        (df["mes"] == mes)
+    ]
+
+    df_group = (
+        df
+        .groupby(["data", "colaborador"])["valor"]
+        .sum()
+        .reset_index()
+    )
+
+    # Pivot (linhas = data, colunas = colaboradores)
+    df_pivot = df_group.pivot(
+        index="data",
+        columns="colaborador",
+        values="valor"
+    ).fillna(0)
+
+    df_pivot = df_pivot.sort_index()
+
+    return df_pivot
+
