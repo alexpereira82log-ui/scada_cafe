@@ -19,6 +19,7 @@ from services.insights import gerar_insights
 
 from services.relatorios import extrair_produtos_relatorio
 from services.analises import resumo_faturamento
+#import services.analises as analises
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA

@@ -1,3 +1,4 @@
+# versão atualizada 1
 import pandas as pd
 from database.connection import get_connection
 
