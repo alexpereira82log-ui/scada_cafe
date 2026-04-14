@@ -921,8 +921,6 @@ with tab5:
 # ======================================================
 with tab6:
 
-    st.write("🚀 Entrou na aba 6")
-
     st.subheader("📄 Relatório de Vendas")
 
     # =========================
