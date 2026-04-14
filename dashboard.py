@@ -18,6 +18,7 @@ from datetime import datetime
 from services.insights import gerar_insights
 
 from services.relatorios import extrair_produtos_relatorio
+from services.analises import resumo_faturamento
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -203,6 +204,10 @@ with tab1:
 # ======================================================
 with tab2:
 
+    # =========================================
+    # 📈 EVOLUÇÃO DO FATURAMENTO
+    # =========================================
+
     st.subheader("📈 Evolução do Faturamento")
 
     df_fat = faturamento_por_mes(dados, ano)
@@ -215,9 +220,9 @@ with tab2:
 
     df_fat["mes_nome"] = df_fat["mes"].map(meses_dict)
 
-    # =========================
+    # =========================================
     # DRILL DOWN
-    # =========================
+    # =========================================
     st.markdown("### 🔎 Drill-down por mês")
 
     meses_disponiveis = df_fat["mes"].tolist()
@@ -228,12 +233,11 @@ with tab2:
         index=meses_disponiveis.index(mes) if mes in meses_disponiveis else 0
     )
 
-    # =========================
-    # GRÁFICOS PRINCIPAIS
-    # =========================
+    # =========================================
+    # GRÁFICO FATURAMENTO
+    # =========================================
     fig_fat = go.Figure()
 
-    # 🔹 Meta (fundo)
     fig_fat.add_bar(
         x=df_fat["mes_nome"],
         y=df_fat["meta"],
@@ -242,7 +246,6 @@ with tab2:
         opacity=0.6
     )
 
-    # 🔹 Faturamento (frente)
     fig_fat.add_bar(
         x=df_fat["mes_nome"],
         y=df_fat["faturamento"],
@@ -252,20 +255,14 @@ with tab2:
         textposition="outside"
     )
 
-    # 🔹 Layout overlay
     fig_fat.update_layout(
         barmode="overlay",
-        title="Faturamento vs Meta",
-        xaxis_title="Mês",
-        yaxis_title="Valor (R$)"
+        title="Faturamento vs Meta"
     )
 
-    fig_fat.update_traces(texttemplate="R$ %{text:,.0f}")
-
-    # Base diária
-    # 🔽 SOMENTE O TRECHO ALTERADO (para não poluir)
-    # Vá direto na aba FATURAMENTO e substitua apenas este bloco:
-
+    # =========================================
+    # BASE DIÁRIA (CORRIGIDA)
+    # =========================================
     df_dia = dados["base_fat"].copy()
 
     df_dia = df_dia[
@@ -276,10 +273,9 @@ with tab2:
     if equipe_sel != "Todas":
         df_dia = df_dia[df_dia["equipe"] == equipe_sel]
 
-    # 🔥 CORREÇÃO AQUI
     df_dia = (
         df_dia
-        .groupby(df_dia["data"].dt.day)
+        .groupby("data")
         .agg({
             "faturamento": "sum",
             "cupom": "sum"
@@ -287,30 +283,20 @@ with tab2:
         .reset_index()
     )
 
-    # 🔥 cálculo correto do ticket médio
     df_dia["ticket_medio"] = df_dia.apply(
         lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
         axis=1
     )
 
-    # manter apenas dias válidos
-    df_dia = df_dia[df_dia["faturamento"] > 0]
-
-
-
+    # =========================================
+    # GRÁFICO DIÁRIO
+    # =========================================
     fig_dia = px.line(
         df_dia,
         x="data",
         y="faturamento",
         markers=True,
         title="Faturamento Diário"
-    )
-
-    fig_dia.update_layout(
-        xaxis=dict(
-            tickmode="linear",
-            dtick=1
-        )
     )
 
     col1, col2 = st.columns(2)
@@ -321,27 +307,89 @@ with tab2:
     with col2:
         st.plotly_chart(fig_dia, use_container_width=True)
 
-    # =========================
+
+    # =========================================
+    # 📊 RESUMO EXECUTIVO (TOPO)
+    # =========================================
+
+    st.markdown("### 🔎 Análise por Equipe")
+
+    df = dados["base_fat"].copy()
+
+    df = df[
+        (df["ano"] == ano) &
+        (df["mes"] == mes)
+    ]
+
+    if not df.empty:
+
+        # =========================
+        # GERAL
+        # =========================
+        fat_medio, ticket, cupons_medio = resumo_faturamento(df)
+
+        # =========================
+        # EQUIPE 1
+        # =========================
+        df_eq1 = df[df["equipe"] == 1]
+        fat1, ticket1, cup1 = resumo_faturamento(df_eq1)
+
+        # =========================
+        # EQUIPE 2
+        # =========================
+        df_eq2 = df[df["equipe"] == 2]
+        fat2, ticket2, cup2 = resumo_faturamento(df_eq2)
+
+        # =========================
+        # LINHA 1 (GERAL)
+        # =========================
+        col1, col2, col3 = st.columns(3)
+
+        col1.markdown(f"<p style='font-size:18px'><b>Faturamento Médio</b><br>R$ {fat_medio:,.2f}</p>", unsafe_allow_html=True)
+        col2.markdown(f"<p style='font-size:18px'><b>Ticket Médio</b><br>R$ {ticket:,.2f}</p>", unsafe_allow_html=True)
+        col3.markdown(f"<p style='font-size:18px'><b>Cupons/Dia</b><br>{cupons_medio:,.0f}</p>", unsafe_allow_html=True)
+
+        # =========================
+        # LINHA 2 (EQUIPE 1)
+        # =========================
+        col1, col2, col3 = st.columns(3)
+
+        col1.markdown(f"<p style='font-size:14px'>Equipe 1<br>R$ {fat1:,.2f}</p>", unsafe_allow_html=True)
+        col2.markdown(f"<p style='font-size:14px'>Equipe 1<br>R$ {ticket1:,.2f}</p>", unsafe_allow_html=True)
+        col3.markdown(f"<p style='font-size:14px'>Equipe 1<br>{cup1:,.0f}</p>", unsafe_allow_html=True)
+
+        # =========================
+        # LINHA 3 (EQUIPE 2)
+        # =========================
+        col1, col2, col3 = st.columns(3)
+
+        col1.markdown(f"<p style='font-size:14px'>Equipe 2<br>R$ {fat2:,.2f}</p>", unsafe_allow_html=True)
+        col2.markdown(f"<p style='font-size:14px'>Equipe 2<br>R$ {ticket2:,.2f}</p>", unsafe_allow_html=True)
+        col3.markdown(f"<p style='font-size:14px'>Equipe 2<br>{cup2:,.0f}</p>", unsafe_allow_html=True)
+
+        st.markdown("---")
+
+
+    # =========================================
     # TABELA
-    # =========================
+    # =========================================
     st.markdown("### 📋 Dados de Faturamento")
 
     st.dataframe(df_dia, use_container_width=True)
 
-    buffer_fat = io.BytesIO()
-    df_dia.to_excel(buffer_fat, index=False)
-    buffer_fat.seek(0)
+    buffer = io.BytesIO()
+    df_dia.to_excel(buffer, index=False)
+    buffer.seek(0)
 
     st.download_button(
-        label="📥 Baixar Faturamento",
-        data=buffer_fat,
-        file_name="faturamento.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "📥 Baixar Faturamento",
+        buffer,
+        "faturamento.xlsx"
     )
 
-    # =========================
+    # =========================================
     # YOY
-    # =========================
+    # =========================================
     st.markdown("### 📊 Comparação Ano a Ano (YoY)")
 
     df_yoy = dados["base_fat"].copy()
@@ -364,143 +412,10 @@ with tab2:
         x="mes_nome",
         y="faturamento",
         color="ano",
-        markers=True,
-        title="Comparação Ano a Ano"
+        markers=True
     )
 
     st.plotly_chart(fig_yoy, use_container_width=True)
-
-    # =========================
-    # YTD
-    # =========================
-    st.markdown("### 📈 Acumulado no Ano (YTD)")
-
-    df_ytd = dados["base_fat"].copy()
-
-    df_ytd = df_ytd[df_ytd["ano"].isin([ano, ano - 1])]
-
-    df_ytd = (
-        df_ytd
-        .groupby([df_ytd["data"].dt.month, "ano"])["faturamento"]
-        .sum()
-        .reset_index()
-    )
-
-    df_ytd.rename(columns={"data": "mes"}, inplace=True)
-
-    df_ytd = df_ytd[df_ytd["mes"] <= mes]
-
-    df_ytd = df_ytd.sort_values(["ano", "mes"])
-
-    df_ytd["acumulado"] = df_ytd.groupby("ano")["faturamento"].cumsum()
-
-    df_ytd["mes_nome"] = df_ytd["mes"].map(meses_dict)
-
-    fig_ytd = px.line(
-        df_ytd,
-        x="mes_nome",
-        y="acumulado",
-        color="ano",
-        markers=True,
-        title="Faturamento Acumulado (YTD)"
-    )
-
-    st.plotly_chart(fig_ytd, use_container_width=True)
-
-    # =========================
-    # 📊 TICKET MÉDIO x CUPONS (MENSAL)
-    # =========================
-    st.markdown("### 📊 Ticket Médio x Cupons (Mensal)")
-
-    df_tc = dados["base_fat"].copy()
-
-    # filtrar apenas ano atual
-    df_tc = df_tc[df_tc["ano"] == ano]
-
-    # 🔥 apenas até o mês atual selecionado
-    df_tc = df_tc[df_tc["mes"] <= mes]
-
-    # =========================
-    # AGRUPAMENTO MENSAL CORRETO
-    # =========================
-    df_tc = (
-        df_tc
-        .groupby("mes")
-        .agg({
-            "faturamento": "sum",
-            "cupom": "sum"
-        })
-        .reset_index()
-    )
-
-    # 🔥 ticket médio correto (NÃO média)
-    df_tc["ticket_medio"] = df_tc.apply(
-        lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
-        axis=1
-    )
-
-    # 🔥 média de cupons por dia no mês
-    df_tc["cupons_medios"] = (
-        dados["base_fat"]
-        .copy()
-        .query("ano == @ano")
-        .query("mes <= @mes")
-        .groupby("mes")["cupom"]
-        .mean()
-        .values
-    )
-
-    # nomes dos meses
-    meses_dict = {
-        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
-        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
-        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
-    }
-
-    df_tc["mes_nome"] = df_tc["mes"].map(meses_dict)
-
-    # =========================
-    # GRÁFICO
-    # =========================
-    fig_tc = go.Figure()
-
-    # Ticket médio
-    fig_tc.add_trace(
-        go.Scatter(
-            x=df_tc["mes_nome"],
-            y=df_tc["ticket_medio"],
-            mode="lines+markers",
-            name="Ticket Médio",
-            yaxis="y1"
-        )
-    )
-
-    # Cupons médios
-    fig_tc.add_trace(
-        go.Scatter(
-            x=df_tc["mes_nome"],
-            y=df_tc["cupons_medios"],
-            mode="lines+markers",
-            name="Cupons Médios",
-            yaxis="y2"
-        )
-    )
-
-    # layout
-    fig_tc.update_layout(
-        title="Ticket Médio x Cupons por Mês",
-        xaxis_title="Mês",
-        yaxis=dict(title="Ticket Médio (R$)"),
-        yaxis2=dict(
-            title="Cupons Médios",
-            overlaying="y",
-            side="right"
-        ),
-        legend=dict(x=0.01, y=0.99),
-        height=400
-    )
-
-    st.plotly_chart(fig_tc, use_container_width=True)
 
 
 # ======================================================

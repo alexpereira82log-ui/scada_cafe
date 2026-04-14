@@ -377,3 +377,41 @@ def comissao_por_dia_colaborador(dados, ano, mes):
     df_pivot = df_pivot.sort_index()
 
     return df_pivot
+
+
+# ============================================================
+# ANALISE RESUMO FATURAMENTO
+# ============================================================
+def resumo_faturamento(df_base):
+
+    if df_base.empty:
+        return 0, 0, 0
+
+    # =========================
+    # AGRUPAR POR DIA
+    # =========================
+    df_dia = (
+        df_base
+        .groupby("data")
+        .agg({
+            "faturamento": "sum",
+            "cupom": "sum"
+        })
+        .reset_index()
+    )
+
+    # =========================
+    # 🔥 CONSIDERAR APENAS DIAS COM OPERAÇÃO
+    # =========================
+    df_dia = df_dia[df_dia["faturamento"] > 0]
+
+    dias = len(df_dia)
+
+    faturamento_total = df_dia["faturamento"].sum()
+    cupons_total = df_dia["cupom"].sum()
+
+    fat_medio = faturamento_total / dias if dias else 0
+    ticket = faturamento_total / cupons_total if cupons_total else 0
+    cupons_medio = cupons_total / dias if dias else 0
+
+    return fat_medio, ticket, cupons_medio
