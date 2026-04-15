@@ -16,10 +16,10 @@ from services.relatorios import extrair_indicadores
 from services.calculos import calcular_metricas
 from datetime import datetime
 from services.insights import gerar_insights
-
+from services.relatorios import extrair_vendas_por_hora
 from services.relatorios import extrair_produtos_relatorio
 from services.analises import resumo_faturamento
-#import services.analises as analises
+
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -431,6 +431,126 @@ with tab2:
     )
 
     st.plotly_chart(fig_yoy, use_container_width=True)
+
+
+    # =========================================
+    # ⏱️ VENDAS POR HORA (MÉDIA DO MÊS)
+    # =========================================
+    st.markdown("### ⏱️ Vendas por Hora (Média do Mês)")
+
+    service = conectar_drive()
+    FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
+    arquivos = listar_arquivos(service, FOLDER_ID)
+
+    dfs = []
+
+    if arquivos:
+
+        for arq in arquivos:
+
+            nome = arq["name"]
+
+            # 🔥 filtrar pelo mês selecionado
+            if f"{ano}-{str(mes).zfill(2)}" in nome:
+
+                texto = baixar_arquivo(service, arq["id"])
+
+                df_temp = extrair_vendas_por_hora(texto)
+
+                if not df_temp.empty:
+                    dfs.append(df_temp)
+
+        if dfs:
+
+            df_total = pd.concat(dfs)
+
+            # =========================
+            # MÉDIA POR HORA
+            # =========================
+            df_media = (
+                df_total
+                .groupby("hora")
+                .agg({
+                    "faturamento": "mean",
+                    "cupons": "mean",
+                    "ticket": "mean"
+                })
+                .reset_index()
+            )
+
+            # =========================
+            # GRÁFICO 1
+            # =========================
+            fig_hora = px.bar(
+                df_media,
+                x="hora",
+                y="faturamento",
+                title="Faturamento Médio por Hora"
+            )
+
+            fig_hora.update_layout(
+                xaxis=dict(
+                    tickmode='linear',
+                    dtick=1
+                )
+            )
+            
+            st.plotly_chart(fig_hora, use_container_width=True)
+
+            # =========================
+            # GRÁFICO 2
+            # =========================
+            fig2 = go.Figure()
+
+            # =========================
+            # BARRAS - CUPONS
+            # =========================
+            fig2.add_trace(
+                go.Bar(
+                    x=df_media["hora"],
+                    y=df_media["cupons"],
+                    name="Cupons",
+                    yaxis="y1"
+                )
+            )
+
+            # =========================
+            # LINHA - TICKET
+            # =========================
+            fig2.add_trace(
+                go.Scatter(
+                    x=df_media["hora"],
+                    y=df_media["ticket"],
+                    mode="lines+markers",
+                    name="Ticket Médio",
+                    yaxis="y2"
+                )
+            )
+
+            # =========================
+            # LAYOUT
+            # =========================
+            fig2.update_layout(
+                title="Ticket Médio x Cupons por Hora (Média do Mês)",
+                xaxis=dict(
+                    tickmode='linear',
+                    dtick=1
+                ),
+                yaxis=dict(title="Cupons"),
+                yaxis2=dict(
+                    title="Ticket Médio (R$)",
+                    overlaying="y",
+                    side="right"
+                )
+            )
+
+            st.plotly_chart(fig2, use_container_width=True)
+
+        else:
+            st.warning("Nenhum relatório do mês encontrado.")
+
+    else:
+        st.warning("Nenhum relatório encontrado.")
 
 
 # ======================================================
