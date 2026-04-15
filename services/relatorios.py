@@ -250,3 +250,46 @@ def gerar_excel_comissao(df, nome_arquivo="relatorio_comissao.xlsx"):
     wb.save(nome_arquivo)
 
     return nome_arquivo
+
+
+# ====================================
+# EXTRAIR VENDAS POR HORA:
+# ====================================
+def extrair_vendas_por_hora(texto):
+
+    linhas = texto.splitlines()
+
+    dados = []
+
+    for linha in linhas:
+
+        # identifica linhas com padrão de horário
+        if re.match(r"\d{2}:\d{2} - \d{2}:\d{2}", linha):
+
+            partes = linha.split()
+
+            try:
+                periodo = partes[0]  # 11:00
+                hora = int(periodo.split(":")[0])
+
+                vendas = float(partes[3].replace(".", "").replace(",", "."))
+                cupons = int(partes[4])
+                ticket = float(partes[5].replace(",", "."))
+
+                dados.append({
+                    "hora": hora,
+                    "faturamento": vendas,
+                    "cupons": cupons,
+                    "ticket": ticket
+                })
+
+            except:
+                continue
+
+    df = pd.DataFrame(dados)
+
+    # 🔥 filtrar horário da operação
+    df = df[(df["hora"] >= 11) & (df["hora"] <= 23)]
+
+    return df
+
