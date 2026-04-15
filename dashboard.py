@@ -284,6 +284,19 @@ with tab2:
         .reset_index()
     )
 
+    # =========================
+    # REMOVER DIAS SEM FATURAMENTO
+    # =========================
+    df_dia = df_dia[df_dia["faturamento"] > 0]
+
+    # =========================
+    # FORMATAR DIA (01, 02, 03...)
+    # =========================
+    df_dia["dia"] = df_dia["data"].dt.strftime("%d")
+
+    # =========================
+    # TICKET MÉDIO
+    # =========================
     df_dia["ticket_medio"] = df_dia.apply(
         lambda x: x["faturamento"] / x["cupom"] if x["cupom"] > 0 else 0,
         axis=1
@@ -294,7 +307,7 @@ with tab2:
     # =========================================
     fig_dia = px.line(
         df_dia,
-        x="data",
+        x="dia",
         y="faturamento",
         markers=True,
         title="Faturamento Diário"
@@ -376,6 +389,7 @@ with tab2:
     # =========================================
     st.markdown("### 📋 Dados de Faturamento")
 
+    df_dia["data"] = df_dia["data"].dt.strftime("%Y-%m-%d")
     st.dataframe(df_dia, use_container_width=True)
 
     buffer = io.BytesIO()
@@ -540,6 +554,124 @@ with tab3:
     df_semana = analise_dia_semana(dados, ano)
 
     st.dataframe(df_semana, use_container_width=True)
+
+
+    # =========================================
+    # 📊 TICKET MÉDIO x CUPONS POR MÊS
+    # =========================================
+    st.markdown("### 📊 Ticket Médio x Cupons por Mês")
+
+    df_mes = dados["base_fat"].copy()
+
+    df_mes = df_mes[
+        (df_mes["ano"] == ano) &
+        (df_mes["mes"] <= mes)
+    ]
+
+    # Agrupar por mês
+    df_mes = (
+        df_mes
+        .groupby("mes")
+        .agg({
+            "faturamento": "sum",
+            "cupom": "sum",
+            "data": "nunique"
+        })
+        .reset_index()
+    )
+
+    # Métricas
+    df_mes["ticket_medio"] = df_mes["faturamento"] / df_mes["cupom"]
+    df_mes["cupons_dia"] = df_mes["cupom"] / df_mes["data"]
+
+    # Nome dos meses
+    meses_dict = {
+        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
+        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
+        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+    }
+
+    df_mes["mes_nome"] = df_mes["mes"].map(meses_dict)
+
+    # Gráfico
+    fig = go.Figure()
+
+    # Ticket médio
+    fig.add_trace(
+        go.Scatter(
+            x=df_mes["mes_nome"],
+            y=df_mes["ticket_medio"],
+            mode="lines+markers",
+            name="Ticket Médio",
+            yaxis="y1"
+        )
+    )
+
+    # Cupons/dia
+    fig.add_trace(
+        go.Scatter(
+            x=df_mes["mes_nome"],
+            y=df_mes["cupons_dia"],
+            mode="lines+markers",
+            name="Cupons/Dia",
+            yaxis="y2"
+        )
+    )
+
+    fig.update_layout(
+        title="Ticket Médio x Cupons por Mês",
+        yaxis=dict(title="Ticket Médio (R$)"),
+        yaxis2=dict(
+            title="Cupons/Dia",
+            overlaying="y",
+            side="right"
+        )
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # =========================================
+    # 📈 FATURAMENTO ACUMULADO (ANO)
+    # =========================================
+    st.markdown("### 📈 Faturamento Acumulado no Ano")
+
+    df_acum = dados["base_fat"].copy()
+
+    df_acum = df_acum[
+        df_acum["ano"].isin([ano, ano - 1])
+    ]
+
+    # Agrupar por mês
+    df_acum = (
+        df_acum
+        .groupby(["ano", "mes"])["faturamento"]
+        .sum()
+        .reset_index()
+    )
+
+    # Ordenar
+    df_acum = df_acum.sort_values(["ano", "mes"])
+
+    # Acumulado
+    df_acum["faturamento_acum"] = df_acum.groupby("ano")["faturamento"].cumsum()
+
+    # Filtrar até mês atual
+    df_acum = df_acum[df_acum["mes"] <= mes]
+
+    # Nome meses
+    df_acum["mes_nome"] = df_acum["mes"].map(meses_dict)
+
+    # Gráfico
+    fig_acum = px.line(
+        df_acum,
+        x="mes_nome",
+        y="faturamento_acum",
+        color="ano",
+        markers=True,
+        title="Faturamento Acumulado (Ano vs Ano Anterior)"
+    )
+
+    st.plotly_chart(fig_acum, use_container_width=True)
 
 # ======================================================
 # ⚠️ PERDAS
