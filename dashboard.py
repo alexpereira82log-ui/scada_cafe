@@ -16,7 +16,8 @@ from services.relatorios import extrair_indicadores
 from services.calculos import calcular_metricas
 from datetime import datetime
 from services.insights import gerar_insights
-from services.relatorios import extrair_vendas_por_hora
+#from services.relatorios import extrair_vendas_por_hora
+import services.relatorios as rel
 from services.relatorios import extrair_produtos_relatorio
 from services.analises import resumo_faturamento
 
@@ -455,7 +456,7 @@ with tab2:
 
                 texto = baixar_arquivo(service, arq["id"])
 
-                df_temp = extrair_vendas_por_hora(texto)
+                df_temp = rel.extrair_vendas_por_hora(texto)
 
                 if not df_temp.empty:
                     dfs.append(df_temp)
