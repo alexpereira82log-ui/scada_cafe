@@ -699,6 +699,9 @@ with tab3:
         (df_mes["mes"] <= mes)
     ]
 
+    # Filtrar apenas dias de operação
+    df_mes = df_mes[df_mes["cupom"] > 0]
+
     # Agrupar por mês
     df_mes = (
         df_mes
