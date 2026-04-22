@@ -303,6 +303,9 @@ with tab2:
         axis=1
     )
 
+
+    df_dia["dia"] = df_dia["data"].dt.day
+
     # =========================================
     # GRÁFICO DIÁRIO
     # =========================================
@@ -312,6 +315,13 @@ with tab2:
         y="faturamento",
         markers=True,
         title="Faturamento Diário"
+    )
+
+    fig_dia.update_layout(
+        xaxis=dict(
+            tickmode="linear",
+            dtick=1
+        )
     )
 
     col1, col2 = st.columns(2)
