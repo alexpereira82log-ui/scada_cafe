@@ -400,9 +400,17 @@ with tab2:
     # =========================================
     st.markdown("### 📋 Dados de Faturamento")
 
+    # 🔥 ORDENAR PRIMEIRO
+    df_dia = df_dia.sort_values("data", ascending=False)
+
+    # 🔥 DEPOIS FORMATAR
     df_dia["data"] = df_dia["data"].dt.strftime("%Y-%m-%d")
+
     st.dataframe(df_dia, use_container_width=True)
 
+    # =========================================
+    # DOWNLOAD
+    # =========================================
     buffer = io.BytesIO()
     df_dia.to_excel(buffer, index=False)
     buffer.seek(0)
