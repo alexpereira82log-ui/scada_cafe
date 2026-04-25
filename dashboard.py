@@ -303,7 +303,6 @@ with tab2:
         axis=1
     )
 
-
     df_dia["dia"] = df_dia["data"].dt.day
 
     # =========================================
@@ -577,7 +576,7 @@ with tab2:
 # ======================================================
 with tab3:
 
-    st.subheader("📌 Projeções de Meta")
+    st.subheader("📌 Projeções")
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -674,7 +673,12 @@ with tab3:
     # Layout com dois eixos
     fig.update_layout(
         title="Ticket Médio x Cupons por Dia",
-        xaxis_title="Dia do Mês",
+        #xaxis_title="Dia do Mês",
+        xaxis=dict(
+            title="Dia do Mês",
+            tickmode="linear",
+            dtick=1
+            ),
         yaxis=dict(title="Ticket Médio (R$)"),
         yaxis2=dict(
             title="Cupons",
