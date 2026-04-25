@@ -673,7 +673,6 @@ with tab3:
     # Layout com dois eixos
     fig.update_layout(
         title="Ticket Médio x Cupons por Dia",
-        #xaxis_title="Dia do Mês",
         xaxis=dict(
             title="Dia do Mês",
             tickmode="linear",
