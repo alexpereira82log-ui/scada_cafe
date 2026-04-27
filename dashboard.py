@@ -628,13 +628,16 @@ with tab3:
     # =========================
     df_plot = (
         df_plot
-        .groupby(df_plot["data"].dt.day)
+        .groupby("data")
         .agg({
             "faturamento": "sum",
             "cupom": "sum"
         })
         .reset_index()
     )
+
+    df_plot["dia"] = df_plot["data"].dt.day
+    df_plot["dia_semana"] = df_plot["data"].dt.weekday
 
     # 🔥 remover dias sem faturamento
     df_plot = df_plot[df_plot["faturamento"] > 0]
@@ -651,7 +654,7 @@ with tab3:
     # Ticket médio
     fig.add_trace(
         go.Scatter(
-            x=df_plot["data"],
+            x=df_plot["dia"],
             y=df_plot["ticket_medio"],
             mode="lines+markers",
             name="Ticket Médio",
@@ -662,12 +665,48 @@ with tab3:
     # Cupons
     fig.add_trace(
         go.Scatter(
-            x=df_plot["data"],
+            x=df_plot["dia"],
             y=df_plot["cupom"],
             mode="lines+markers",
             name="Cupons",
             yaxis="y2"
         )
+    )
+
+    # =========================
+    # DESTACAR FINS DE SEMANA
+    # =========================
+    fins_de_semana = df_plot[df_plot["dia_semana"].isin([5, 6])]
+
+    for _, row in fins_de_semana.iterrows():
+        fig.add_vrect(
+            x0=row["dia"] - 0.5,
+            x1=row["dia"] + 0.5,
+            fillcolor="lightgray",
+            opacity=0.3,
+            layer="below",
+            line_width=0
+        )
+
+    # =========================
+    # LINHA DO DIA ATUAL
+    # =========================
+    hoje_dia = datetime.today().day
+
+    fig.add_vline(
+        x=hoje_dia,
+        line_width=2,
+        line_dash="dash",
+        line_color="red"
+    )
+
+    fig.add_annotation(
+        x=hoje_dia,
+        y=max(df_plot["ticket_medio"]),
+        text="Hoje",
+        showarrow=True,
+        arrowhead=1,
+        yshift=10
     )
 
     # Layout com dois eixos
