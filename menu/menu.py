@@ -166,6 +166,10 @@ def mostrar_resumo_relatorio():
     print(f"TC-Total Cupom: {dados['tc']}")
     print(f"TM-Ticket Medio por Cupom: {dados['tm']}\n")
 
+    print("Faturamento mês: ")
+    print("% Meta: ")
+    print("Projeção: \n")
+
     print("CANCELAMENTO VENDA MESA (ANTES ENVIAR PRODUCAO):")
     print(tabela_antes)
     print('- Justificativa: "Escreva aqui sua justificativa"\n')
