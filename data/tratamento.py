@@ -47,7 +47,9 @@ def tratar_dados(dados: dict) -> dict:
     # ============================================================
     base_fat_df["meta"] = pd.to_numeric(base_fat_df["meta"], errors="coerce")
     base_fat_df["faturamento"] = pd.to_numeric(base_fat_df["faturamento"], errors="coerce")
-    base_fat_df["data"] = pd.to_datetime(base_fat_df["data"])
+    base_fat_df["data"] = pd.to_datetime(base_fat_df["data"],errors="coerce")
+
+    base_fat_df = base_fat_df.dropna(subset=["data"])
 
     base_fat_df["ano"] = base_fat_df["data"].dt.year
     base_fat_df["mes"] = base_fat_df["data"].dt.month
@@ -56,7 +58,7 @@ def tratar_dados(dados: dict) -> dict:
     # ============================================================
     # TRATAMENTO BASE COMISSÃO
     # ============================================================
-    base_comissao_df["data"] = pd.to_datetime(base_comissao_df["data"])
+    base_comissao_df["data"] = pd.to_datetime(base_comissao_df["data"],errors="coerce")
 
     base_comissao_df["ano"] = base_comissao_df["data"].dt.year
     base_comissao_df["mes"] = base_comissao_df["data"].dt.month
@@ -65,7 +67,7 @@ def tratar_dados(dados: dict) -> dict:
     # ============================================================
     # TRATAMENTO BASE PERDAS
     # ============================================================
-    base_perdas_df["data"] = pd.to_datetime(base_perdas_df["data"])
+    base_perdas_df["data"] = pd.to_datetime(base_perdas_df["data"],errors="coerce")
 
     base_perdas_df["qtd"] = (
         base_perdas_df["qtd"]
