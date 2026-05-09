@@ -1055,8 +1055,14 @@ with tab5:
     )
 
     total = df_prod["valor_total"].sum()
+
+    # coluna numérica (para cálculos)
     df_prod["participacao"] = df_prod["valor_total"] / total
-    df_prod["perc"] = df_prod["participacao"] * 100
+
+    # coluna formatada (para exibição)
+    df_prod["participacao_fmt"] = (
+        df_prod["participacao"] * 100
+    ).map(lambda x: f"{x:.2f}%".replace(".", ","))
 
     # =========================
     # 🏆 TOP PRODUTOS
@@ -1064,7 +1070,12 @@ with tab5:
     st.markdown("### 🏆 Top Produtos")
 
     st.dataframe(
-        df_prod.head(10),
+        df_prod[[
+            "produto",
+            "qtd",
+            "valor_total",
+            "participacao_fmt"
+        ]].head(10),
         use_container_width=True
     )
 
@@ -1089,7 +1100,7 @@ with tab5:
     st.markdown("### 📊 Participação (%)")
 
     st.dataframe(
-        df_prod[["produto", "valor_total", "perc"]],
+        df_prod[["produto", "valor_total", "participacao_fmt"]],
         use_container_width=True
     )
 

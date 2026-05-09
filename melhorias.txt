@@ -1,0 +1,4 @@
+Melhorias para projeto:
+-------------------------------------------------------------------------------------
+- Aba visão geral - melhorar coluna direita com mais informações e organização
+- Aba perdas - Incluir tabela com perdas por categoria
