@@ -1214,3 +1214,4 @@ with tab6:
         # =========================
         with st.expander("📄 Ver relatório completo"):
             st.text(texto)
+            
