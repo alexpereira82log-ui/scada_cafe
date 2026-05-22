@@ -5,6 +5,29 @@ from datetime import datetime
 
 from database.connection import get_connection
 
+# ==========================================================
+# CARREGAR COLABORADORES ATIVOS
+# ==========================================================
+
+def carregar_colaboradores():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT nome
+        FROM colaboradores
+        WHERE ativo = TRUE
+        ORDER BY nome
+    """)
+
+    colaboradores = [row[0] for row in cursor.fetchall()]
+
+    cursor.close()
+    conn.close()
+
+    return colaboradores
+
 
 def salvar_registro():
     try:
@@ -50,6 +73,9 @@ def limpar_campos():
     combo_motivo.set('')
     combo_responsavel.set('')
     entry_obs.delete(0, tk.END)
+
+
+colaboradores = carregar_colaboradores()
 
 
 root = tk.Tk()
@@ -109,11 +135,7 @@ combo_motivo.pack()
 tk.Label(root, text="Responsável").pack()
 combo_responsavel = ttk.Combobox(
     root,
-    values=[
-        "Brunna", "Alex", "Jaqueline", "Fatima", "Fabio",
-        "Jeisiana", "David", "Alexandro", "Jessyca",
-        "Naiane", "Francisca"
-    ],
+    values=colaboradores,
     state="readonly"
 )
 combo_responsavel.pack()

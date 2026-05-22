@@ -10,9 +10,16 @@ from datetime import datetime
 conn = get_connection()
 cursor = conn.cursor()
 
-cursor.execute("SELECT id, nome FROM colaboradores ORDER BY nome")
+cursor.execute("""
+    SELECT id, nome
+    FROM colaboradores
+    WHERE ativo = TRUE
+    ORDER BY nome
+""")
+
 colaboradores = cursor.fetchall()
 
+cursor.close()
 conn.close()
 
 # ==========================================================
