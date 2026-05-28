@@ -203,13 +203,14 @@ def calcular_comissao_projecoes(dados: dict, ano: int, mes: int, metricas: dict)
     dias_restantes = metricas["dias_restantes"]
 
     # 🔥 total acumulado (ex: 25,69)
-    total_acumulado = df_group["valor"].mean()
+    total_acumulado = df_group["valor"].max()
 
     # 🔥 média diária correta
     media = total_acumulado / dias_passados if dias_passados > 0 else 0
 
     # 🔥 projeção correta
-    projecao = media * (dias_passados + dias_restantes)
+
+    projecao = total_acumulado + (media * dias_restantes)
 
     return {
         "df": df_group,
