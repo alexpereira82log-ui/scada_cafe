@@ -1094,15 +1094,6 @@ with tab5:
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # =========================
-    # 📊 PARTICIPAÇÃO
-    # =========================
-    st.markdown("### 📊 Participação (%)")
-
-    st.dataframe(
-        df_prod[["produto", "valor_total", "participacao_fmt"]],
-        use_container_width=True
-    )
 
     # =========================
     # 📈 CURVA ABC
