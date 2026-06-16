@@ -48,13 +48,14 @@ def salvar_registro():
             entry_data.get(),
             entry_item.get(),
             combo_categoria.get(),
-            int(entry_qtd.get()),
+            entry_qtd.get().strip(),
             combo_motivo.get(),
             combo_responsavel.get(),
             entry_obs.get()
         ))
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         messagebox.showinfo("Sucesso", "Registro inserido com sucesso!")
