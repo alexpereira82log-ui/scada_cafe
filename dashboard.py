@@ -20,6 +20,7 @@ from services.insights import gerar_insights
 import services.relatorios as rel
 from services.relatorios import extrair_produtos_relatorio
 from services.analises import resumo_faturamento
+from admin.ui import exibir_area_admin
 
 
 # =========================
@@ -97,13 +98,14 @@ cor_meta = "normal" if atingiu_meta else "inverse"
 # =========================
 # ABAS
 # =========================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Visão Geral",
     "📈 Faturamento",
     "📌 Projeções",
     "⚠️ Perdas",
     "🏆 Produtos",
-    "📄 Relatório Vendas"
+    "📄 Relatório Vendas",
+    "🔒 Administração"
 ])
 
 
@@ -1206,3 +1208,11 @@ with tab6:
         with st.expander("📄 Ver relatório completo"):
             st.text(texto)
             
+
+# ======================================================
+# 🔒 ADMINISTRAÇÃO
+# ======================================================
+
+with tab7:
+
+    exibir_area_admin()
