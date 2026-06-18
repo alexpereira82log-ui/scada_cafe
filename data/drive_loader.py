@@ -4,11 +4,9 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-
-
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
-
+@st.cache_resource
 def conectar_drive():
 
     try:
@@ -28,17 +26,18 @@ def conectar_drive():
     service = build('drive', 'v3', credentials=creds)
     return service
 
-def listar_arquivos(service, folder_id):
-    results = service.files().list(
+@st.cache_data(ttl=300)
+def listar_arquivos(_service, folder_id):
+    results = _service.files().list(
         q=f"'{folder_id}' in parents",
         fields="files(id, name)"
     ).execute()
 
     return results.get('files', [])
 
-
-def baixar_arquivo(service, file_id):
-    request = service.files().get_media(fileId=file_id)
+@st.cache_data(ttl=300)
+def baixar_arquivo(_service, file_id):
+    request = _service.files().get_media(fileId=file_id)
     file = io.BytesIO()
 
     downloader = MediaIoBaseDownload(file, request)

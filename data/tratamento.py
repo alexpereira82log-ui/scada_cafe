@@ -1,7 +1,8 @@
 import pandas as pd
 import locale
+import streamlit as st
 
-
+@st.cache_data(ttl=300)
 def tratar_dados(dados: dict) -> dict:
     """
     Recebe um dicionário de DataFrames e retorna os dados tratados.

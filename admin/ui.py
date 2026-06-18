@@ -48,10 +48,6 @@ def exibir_area_admin():
 
             st.session_state.admin_logado = False
 
-            # Limpa o campo de senha
-            if "senha_admin" in st.session_state:
-                st.session_state.senha_admin = ""
-
             st.rerun()
 
     st.divider()
