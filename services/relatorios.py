@@ -40,6 +40,7 @@ def extrair_indicadores(texto):
         "resultado_operacional": buscar_valor("RES. OPERACIONAL"),
         "sangria": buscar_valor("Sangria"),
         "troco": buscar_valor("Troco"),
+        "tx_servico": buscar_valor("Tx. Serv Mesa"),
     }
 
     # Ticket médio
