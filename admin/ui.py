@@ -1,7 +1,10 @@
 import streamlit as st
 
 from admin.auth import autenticar_admin
-
+from admin.pages.faturamento import tela_faturamento
+from admin.pages.perdas import tela_perdas
+from admin.pages.metas import tela_metas
+from admin.pages.colaboradores import tela_colaboradores
 
 # ==========================================
 # ÁREA ADMINISTRATIVA
@@ -37,17 +40,13 @@ def exibir_area_admin():
     col1, col2 = st.columns([4, 1])
 
     with col1:
-        st.success("Administrador autenticado.")
+        st.success("🔓 Área administrativa liberada.")
 
     with col2:
 
         if st.button("🚪 Sair"):
 
             st.session_state.admin_logado = False
-
-            # Limpa o campo de senha
-            if "senha_admin" in st.session_state:
-                st.session_state.senha_admin = ""
 
             st.rerun()
 
@@ -73,16 +72,16 @@ def exibir_area_admin():
 
     elif opcao == "Faturamento":
 
-        st.warning("Módulo em desenvolvimento.")
+        tela_faturamento()
 
     elif opcao == "Perdas":
 
-        st.warning("Módulo em desenvolvimento.")
+        tela_perdas()
 
     elif opcao == "Metas":
 
-        st.warning("Módulo em desenvolvimento.")
+        tela_metas()
 
     elif opcao == "Colaboradores":
 
-        st.warning("Módulo em desenvolvimento.")
+        tela_colaboradores()

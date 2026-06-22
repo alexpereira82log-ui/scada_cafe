@@ -1,4 +1,6 @@
 import pandas as pd
+import streamlit as st
+
 from database.connection import get_connection
 
 
@@ -8,14 +10,14 @@ def carregar_tabela(conn, nome_tabela):
     """
     try:
         df = pd.read_sql(f"SELECT * FROM {nome_tabela}", conn)
-        print(f"✅ Tabela '{nome_tabela}' carregada ({len(df)} registros)")
+        #print(f"✅ Tabela '{nome_tabela}' carregada ({len(df)} registros)")
         return df
 
     except Exception as e:
         print(f"⚠️ Erro ao carregar tabela '{nome_tabela}': {e}")
         return pd.DataFrame()
 
-
+@st.cache_data(ttl=300)
 def carregar_dados():
     """
     Carrega todas as tabelas do banco e retorna um dicionário de DataFrames.
@@ -43,7 +45,7 @@ def carregar_dados():
             dados[chave] = pd.DataFrame()
 
     # 🔍 DEBUG FINAL
-    print("\n📦 DADOS CARREGADOS:")
+    #print("\n📦 DADOS CARREGADOS:")
     for chave, df in dados.items():
         print(f"{chave}: {df.shape}")
 
