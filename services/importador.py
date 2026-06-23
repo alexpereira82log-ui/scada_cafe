@@ -149,22 +149,12 @@ if __name__ == "__main__":
 
     FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
 
-    dados_importados = importar_relatorio(
+    linhas = executar_importacao(
         "2026-06-10",
         FOLDER_ID
     )
 
-    print("\n===== DATA =====")
-    print(dados_importados["data"])
-
-    print("\n===== ARQUIVO =====")
-    print(dados_importados["nome_arquivo"])
-
-    print("\n===== BASE_FAT =====")
-    print(dados_importados["base_fat"])
-
-    print("\n===== COMISSÃO =====")
-    print(dados_importados["comissao_dia"])
-
-    print("\n===== PRODUTOS =====")
-    print(dados_importados["produtos"])
+    print(
+        f"\n✅ Importação concluída. "
+        f"{linhas} registro(s) atualizado(s)."
+    )
