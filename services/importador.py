@@ -12,6 +12,7 @@ from database.connection import get_connection
 from services.persistencia import (
     salvar_base_fat,
     salvar_comissao_dia,
+    salvar_produtos
 )
 
 
@@ -138,12 +139,20 @@ def executar_importacao(data_relatorio: str, folder_id: str):
             comissao_dia=dados_importados["comissao_dia"],
         )
 
+        linhas_produtos = salvar_produtos(
+            conn=conn,
+            data=dados_importados["data"],
+            nome_arquivo=dados_importados["nome_arquivo"],
+            df_produtos=dados_importados["produtos"],
+        )
+
         # Confirma todas as alterações
         conn.commit()
 
         return {
             "base_fat": linhas_base_fat,
             "comissao_dia": linhas_comissao,
+            "produtos": linhas_produtos,
         }
 
     except Exception:
@@ -162,7 +171,7 @@ if __name__ == "__main__":
     FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
 
     resultado = executar_importacao(
-        "2026-06-10",
+        "2026-06-23",
         FOLDER_ID
     )
 

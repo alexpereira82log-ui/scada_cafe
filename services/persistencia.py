@@ -38,10 +38,14 @@ def salvar_base_fat(conn, data: str, base_fat: dict):
 
 def salvar_comissao_dia(conn, data: str, comissao_dia: dict):
     """
-    Atualiza os dados da tabela comissao_dia.
+    Atualiza ou cria o registro da tabela comissao_dia.
     """
 
     cursor = conn.cursor()
+
+    # ==========================================
+    # TENTA ATUALIZAR
+    # ==========================================
 
     cursor.execute(
         """
@@ -57,6 +61,83 @@ def salvar_comissao_dia(conn, data: str, comissao_dia: dict):
     )
 
     linhas_afetadas = cursor.rowcount
+
+    # ==========================================
+    # SE NÃO EXISTIR, INSERE
+    # ==========================================
+
+    if linhas_afetadas == 0:
+
+        cursor.execute(
+            """
+            INSERT INTO comissao_dia (
+                data,
+                comiss_dia
+            )
+            VALUES (%s, %s)
+            """,
+            (
+                data,
+                comissao_dia["comiss_dia"],
+            ),
+        )
+
+        linhas_afetadas = 1
+
+    cursor.close()
+
+    return linhas_afetadas
+
+
+# ==========================================
+# ATUALIZAR VENDA_PRODUTOS
+# ==========================================
+
+def salvar_produtos(
+    conn,
+    data: str,
+    nome_arquivo: str,
+    df_produtos,
+):
+    """
+    Salva os produtos extraídos do relatório.
+    """
+
+    cursor = conn.cursor()
+
+    linhas_afetadas = 0
+
+    for _, row in df_produtos.iterrows():
+
+        cursor.execute(
+            """
+            INSERT INTO venda_produtos (
+                data,
+                cod_produto,
+                produto,
+                qtd,
+                valor_total,
+                origem_arquivo
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (data, cod_produto)
+            DO UPDATE SET
+                produto = EXCLUDED.produto,
+                qtd = EXCLUDED.qtd,
+                valor_total = EXCLUDED.valor_total,
+                origem_arquivo = EXCLUDED.origem_arquivo
+            """,
+            (
+                data,
+                row["cod_produto"],
+                row["produto"],
+                row["qtd"],
+                row["valor_total"],
+                nome_arquivo,
+            ),
+        )
+
+        linhas_afetadas += 1
 
     cursor.close()
 

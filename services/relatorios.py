@@ -201,6 +201,7 @@ def extrair_produtos_relatorio(texto):
                     valor = float(partes[-2].replace(",", "."))
 
                     dados.append({
+                        "cod_produto": int(codigo),
                         "produto": nome,
                         "qtd": qtd,
                         "valor_total": valor
