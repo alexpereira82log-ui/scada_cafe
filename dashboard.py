@@ -36,6 +36,10 @@ st.set_page_config(
 # CARREGAR DADOS
 # =========================
 dados = carregar_dados()
+print("\n===== BASE PRODUTOS =====")
+print(dados["base_produtos"].head())
+print(dados["base_produtos"].columns)
+
 dados = tratar_dados(dados)
 
 
