@@ -11,14 +11,18 @@ from services.analises import (
     faturamento_por_mes,
     analise_dia_semana
 )
-from data.drive_loader import conectar_drive, listar_arquivos, baixar_arquivo
+
+from data.drive_loader import (
+    conectar_drive,
+    listar_arquivos,
+    baixar_arquivo
+)
+
 from services.relatorios import extrair_indicadores
 from services.calculos import calcular_metricas
 from datetime import datetime
 from services.insights import gerar_insights
-#from services.relatorios import extrair_vendas_por_hora
 import services.relatorios as rel
-from services.relatorios import extrair_produtos_relatorio
 from services.analises import resumo_faturamento
 from admin.ui import exibir_area_admin
 
@@ -982,6 +986,22 @@ with tab4:
 # ======================================================
 with tab5:
 
+    # =========================
+    # BASE PRODUTOS (SUPABASE)
+    # =========================
+
+    df_produtos_base = dados["base_produtos"].copy()
+
+    df_produtos_base["data"] = pd.to_datetime(
+        df_produtos_base["data"]
+    )
+
+    print("\n===== PRODUTOS BASE =====")
+    print(df_produtos_base.head())
+
+    print(df_produtos_base["data"].min())
+    print(df_produtos_base["data"].max())
+
     st.subheader("🏆 Análise de Produtos (Relatório Diário)")
 
     # =========================
@@ -994,57 +1014,54 @@ with tab5:
     )
 
     # =========================
-    # CONEXÃO DRIVE
+    # FILTRO DA BASE PRODUTOS
     # =========================
-    service = conectar_drive()
-    FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
-    arquivos = listar_arquivos(service, FOLDER_ID)
 
-    if not arquivos:
-        st.warning("Nenhum relatório encontrado.")
-        st.stop()
+    df_produtos_base["mes"] = df_produtos_base["data"].dt.month
+    df_produtos_base["ano"] = df_produtos_base["data"].dt.year
 
     # =========================
-    # 📊 MODO ACUMULADO
+    # 📊 ACUMULADO
     # =========================
+
     if modo == "📊 Acumulado":
 
-        lista_df = []
-
-        for arq in arquivos:
-            texto = baixar_arquivo(service, arq["id"])
-            df_temp = extrair_produtos_relatorio(texto)
-
-            if not df_temp.empty:
-                lista_df.append(df_temp)
-
-        if not lista_df:
-            st.warning("Nenhum dado encontrado nos relatórios.")
-            st.stop()
-
-        df_prod = pd.concat(lista_df, ignore_index=True)
+        df_prod = df_produtos_base[
+            (df_produtos_base["ano"] == ano)
+            &
+            (df_produtos_base["mes"] == mes)
+        ]
 
     # =========================
-    # 📅 MODO DIA ESPECÍFICO
+    # 📅 DIA ESPECÍFICO
     # =========================
+
     else:
 
-        nomes = [a["name"] for a in arquivos]
+        datas_disponiveis = sorted(
+            df_produtos_base["data"].dt.date.unique(),
+            reverse=True
+        )
 
-        arquivo_sel = st.selectbox(
-            "Selecione o relatório",
-            nomes,
+        data_sel = st.selectbox(
+            "Selecione a data",
+            datas_disponiveis,
             key="select_relatorio_produtos"
         )
 
-        arquivo = next(a for a in arquivos if a["name"] == arquivo_sel)
+        df_prod = df_produtos_base[
+            df_produtos_base["data"].dt.date == data_sel
+        ]
 
-        texto = baixar_arquivo(service, arquivo["id"])
-        df_prod = extrair_produtos_relatorio(texto)
+    # =========================
+    # VALIDAÇÃO
+    # =========================
 
-        if df_prod.empty:
-            st.warning("Nenhum produto encontrado no relatório.")
-            st.stop()
+    if df_prod.empty:
+
+        st.warning("Nenhum produto encontrado.")
+
+        st.stop()
 
     # =========================
     # AGRUPAMENTO
