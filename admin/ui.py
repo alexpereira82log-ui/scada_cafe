@@ -5,6 +5,7 @@ from admin.pages.faturamento import tela_faturamento
 from admin.pages.perdas import tela_perdas
 from admin.pages.metas import tela_metas
 from admin.pages.colaboradores import tela_colaboradores
+from admin.pages.importador import tela_importador
 
 # ==========================================
 # ÁREA ADMINISTRATIVA
@@ -52,36 +53,28 @@ def exibir_area_admin():
 
     st.divider()
 
-
-    opcao = st.selectbox(
-        "Selecione o módulo",
+    opcao = st.radio(
+        "Operações",
         [
-            "Página Inicial",
-            "Faturamento",
-            "Perdas",
-            "Metas",
-            "Colaboradores"
+            "📥 Importador",
+            "👥 Colaboradores",
+            "💰 Faturamento",
+            "🎯 Metas",
+            "⚠️ Perdas",
         ]
     )
 
-    if opcao == "Página Inicial":
+    if opcao == "📥 Importador":
+        tela_importador()
 
-        st.info(
-            "Selecione um módulo acima para iniciar."
-        )
-
-    elif opcao == "Faturamento":
-
-        tela_faturamento()
-
-    elif opcao == "Perdas":
-
-        tela_perdas()
-
-    elif opcao == "Metas":
-
-        tela_metas()
-
-    elif opcao == "Colaboradores":
-
+    elif opcao == "👥 Colaboradores":
         tela_colaboradores()
+
+    elif opcao == "💰 Faturamento":
+        st.info("🚧 Em desenvolvimento")
+
+    elif opcao == "🎯 Metas":
+        st.info("🚧 Em desenvolvimento")
+
+    elif opcao == "⚠️ Perdas":
+        st.info("🚧 Em desenvolvimento")

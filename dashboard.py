@@ -107,13 +107,13 @@ cor_meta = "normal" if atingiu_meta else "inverse"
 # ABAS
 # =========================
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📊 Visão Geral",
+    "📊 Dashboard",
     "📈 Faturamento",
     "📌 Projeções",
     "⚠️ Perdas",
     "🏆 Produtos",
-    "📄 Relatório Vendas",
-    "🔒 Administração"
+    "📄 Relatórios",
+    "⚙️ Administração"
 ])
 
 
