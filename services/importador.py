@@ -1,5 +1,7 @@
 # Bibliotecas padrão
 import re
+import sys
+from datetime import datetime
 
 # Imports internos
 from services.relatorios import (
@@ -168,10 +170,27 @@ def executar_importacao(data_relatorio: str, folder_id: str):
 
 if __name__ == "__main__":
 
+    if len(sys.argv) != 2:
+        print("Uso:")
+        print("python3 -m services.importador AAAA-MM-DD")
+        sys.exit(1)
+
+    data_relatorio = sys.argv[1]
+
+    # ==========================================
+    # VALIDAR FORMATO DA DATA
+    # ==========================================
+    try:
+        datetime.strptime(data_relatorio, "%Y-%m-%d")
+    except ValueError:
+        print("Formato de data inválido.")
+        print("Use: AAAA-MM-DD")
+        sys.exit(1)
+
     FOLDER_ID = "1-EZ342AsYKlkBpaT0Hcvo7f1GH0dW8G4"
 
     resultado = executar_importacao(
-        "2026-06-23",
+        data_relatorio,
         FOLDER_ID
     )
 
