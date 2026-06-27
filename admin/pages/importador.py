@@ -29,6 +29,12 @@ def tela_importador():
                     FOLDER_ID
                 )
 
+            
+            # Limpa o cache do Streamlit
+            st.cache_data.clear()
+            # Atualiza o cache para que o Dashboard reflita
+            # imediatamente os dados recém-importados.
+
             st.success("Importação concluída com sucesso!")
             st.caption(f"Relatório importado: {data_str}")
 
