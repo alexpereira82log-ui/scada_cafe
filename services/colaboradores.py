@@ -119,29 +119,29 @@ def editar_colaborador(colaborador_id, novo_nome):
     conn.close()
 
 
-    # ==========================================
-    # LISTA COLABORADOR
-    # ==========================================
+# ==========================================
+# LISTA COLABORADOR
+# ==========================================
 
-    def listar_colaboradores_select(ativo=True):
+def listar_colaboradores_select(ativo=True):
 
-        conn = get_connection()
-        cursor = conn.cursor()
+    conn = get_connection()
+    cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT
-                id,
-                nome
-            FROM colaboradores
-            WHERE ativo = %s
-            ORDER BY nome
-        """, (ativo,))
+    cursor.execute("""
+        SELECT
+            id,
+            nome
+        FROM colaboradores
+        WHERE ativo = %s
+        ORDER BY nome
+    """, (ativo,))
 
-        colaboradores = cursor.fetchall()
+    colaboradores = cursor.fetchall()
 
-        conn.close()
+    conn.close()
 
-        return colaboradores
+    return colaboradores
 
 
 # ==========================================
