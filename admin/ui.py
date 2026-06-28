@@ -49,6 +49,9 @@ def exibir_area_admin():
 
             st.session_state.admin_logado = False
 
+            # Força a recriação do campo de senha
+            st.session_state.login_key += 1
+
             st.rerun()
 
     st.divider()
@@ -71,7 +74,7 @@ def exibir_area_admin():
         tela_colaboradores()
 
     elif opcao == "💰 Faturamento":
-        st.info("🚧 Em desenvolvimento")
+        tela_faturamento()
 
     elif opcao == "🎯 Metas":
         st.info("🚧 Em desenvolvimento")

@@ -8,13 +8,12 @@ from admin.config import ADMIN_PASSWORD
 # ==========================================
 
 def inicializar_admin():
-    """
-    Cria a variável de sessão que controla
-    se o administrador está autenticado.
-    """
 
     if "admin_logado" not in st.session_state:
         st.session_state.admin_logado = False
+
+    if "login_key" not in st.session_state:
+        st.session_state.login_key = 0
 
 
 # ==========================================
@@ -32,7 +31,7 @@ def autenticar_admin():
     senha = st.text_input(
         "Digite a senha de administrador",
         type="password",
-        key="senha_admin"
+        key=f"senha_admin_{st.session_state.login_key}"
     )
 
     if st.button("Entrar", key="btn_login_admin"):
@@ -40,9 +39,15 @@ def autenticar_admin():
         if senha == ADMIN_PASSWORD:
 
             st.session_state.admin_logado = True
+
+            # Limpa o campo de senha
+            st.session_state.admin_logado = True
+
+            # Força a recriação do campo de senha
+            st.session_state.login_key += 1
+
             st.success("Status: ✅ Acesso liberado")
 
-            # Recarrega a página para atualizar a interface
             st.rerun()
 
         else:
