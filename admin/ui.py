@@ -77,7 +77,7 @@ def exibir_area_admin():
         tela_faturamento()
 
     elif opcao == "🎯 Metas":
-        st.info("🚧 Em desenvolvimento")
+        tela_metas()
 
     elif opcao == "⚠️ Perdas":
         st.info("🚧 Em desenvolvimento")
