@@ -336,3 +336,48 @@ def validar_importacao_metas(df):
         "meta_mensal": float(df["meta"].sum())
 
     }
+
+# ==========================================
+# IMPORTAR METAS
+# ==========================================
+
+def importar_metas(df):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    registros_atualizados = 0
+
+    try:
+
+        for _, row in df.iterrows():
+
+            cursor.execute("""
+                UPDATE base_fat
+                SET meta = %s
+                WHERE data = %s
+            """, (
+                row["meta"],
+                row["data"]
+            ))
+
+            registros_atualizados += cursor.rowcount
+
+        conn.commit()
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        cursor.close()
+        conn.close()
+
+    return {
+
+        "registros_atualizados": registros_atualizados,
+        "meta_mensal": float(df["meta"].sum())
+
+    }

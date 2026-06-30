@@ -8,7 +8,8 @@ from services.metas import (
     ler_planilha_metas,
     preparar_planilha_metas,
     montar_dataframe_importacao,
-    validar_importacao_metas
+    validar_importacao_metas,
+    importar_metas
 )
 
 
@@ -77,6 +78,25 @@ def tela_metas():
     if "confirmar_abertura_mes" not in st.session_state:
         st.session_state.confirmar_abertura_mes = False
 
+    if "confirmar_importacao_metas" not in st.session_state:
+        st.session_state.confirmar_importacao_metas = False
+
+    if "mensagem_importacao" not in st.session_state:
+        st.session_state.mensagem_importacao = None
+
+    # ==========================================
+    # MENSAGENS
+    # ==========================================
+
+    if st.session_state.mensagem_importacao:
+
+        st.success(st.session_state.mensagem_importacao)
+
+        st.session_state.mensagem_importacao = None
+
+    # ==========================================
+    # ABRIR NOVO MÊS
+    # ==========================================
 
     # ==========================================
     # ABRIR NOVO MÊS
@@ -243,8 +263,76 @@ def tela_metas():
                 if status["valido"]:
 
                     st.success(
-                        "Planilha validada com sucesso. Pronta para importação."
+                        "Planilha validada com sucesso."
                     )
+
+                    st.divider()
+
+                    if not st.session_state.confirmar_importacao_metas:
+
+                        if st.button("📥 Importar Metas"):
+
+                            st.session_state.confirmar_importacao_metas = True
+
+                            st.rerun()
+
+                    else:
+
+                        st.warning(
+                            "Você está prestes a atualizar as metas deste mês."
+                        )
+
+                        st.markdown(
+                            f"""
+                **Mês:** {resultado["nome_mes"]}/{ano}
+
+                **Dias que serão atualizados:** {status["dias_planilha"]}
+
+                **Meta mensal:** R$ {status["meta_mensal"]:,.2f}
+
+                Deseja realmente continuar?
+                """
+                        )
+
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+
+                            if st.button("Cancelar"):
+
+                                st.session_state.confirmar_importacao_metas = False
+
+                                st.rerun()
+
+                        with col2:
+
+                            if st.button("✅ Confirmar Importação"):
+
+                                try:
+
+                                    resultado_importacao = importar_metas(df)
+
+                                    st.session_state.confirmar_importacao_metas = False
+
+                                    st.session_state.confirmar_importacao_metas = False
+
+                                    st.session_state.mensagem_importacao = (
+                                        f"""
+                                    Importação concluída com sucesso!
+
+                                    Registros atualizados: {resultado_importacao["registros_atualizados"]}
+
+                                    Meta mensal importada:
+
+                                    R$ {resultado_importacao["meta_mensal"]:,.2f}
+                                    """
+                                    )
+
+                                    st.rerun()
+
+                                except Exception as e:
+
+                                    st.error(str(e))
 
                 else:
 
