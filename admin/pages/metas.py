@@ -4,7 +4,11 @@ from datetime import date
 from services.metas import (
     obter_status_mes,
     obter_proximo_mes,
-    abrir_novo_mes
+    abrir_novo_mes,
+    ler_planilha_metas,
+    preparar_planilha_metas,
+    montar_dataframe_importacao,
+    validar_importacao_metas
 )
 
 
@@ -177,9 +181,80 @@ def tela_metas():
 
     with st.expander("📂 Importar metas"):
 
-        st.info(
-            "Funcionalidade em desenvolvimento."
+        st.write(
+            "Selecione a planilha de metas enviada pela diretoria."
         )
+
+        arquivo = st.file_uploader(
+            "Planilha de metas",
+            type=["xlsx"]
+        )
+
+        if arquivo:
+
+            try:
+
+                resultado = ler_planilha_metas(arquivo)
+
+                df = preparar_planilha_metas(
+                    resultado["dados"]
+                )
+
+                df = montar_dataframe_importacao(
+                    df,
+                    ano,
+                    resultado["mes"]
+                )
+
+                status = validar_importacao_metas(df)
+
+                st.divider()
+
+                st.subheader("📋 Resumo da Importação")
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.metric(
+                        "📅 Mês",
+                        f'{resultado["nome_mes"]}/{hoje.year}'
+                    )
+
+                    st.metric(
+                        "📆 Dias encontrados",
+                        status["dias_planilha"]
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "📅 Dias no banco",
+                        status["dias_banco"]
+                    )
+
+                    st.metric(
+                        "💰 Meta mensal",
+                        f'R$ {status["meta_mensal"]:,.2f}'
+                    )
+
+                st.divider()
+
+                if status["valido"]:
+
+                    st.success(
+                        "Planilha validada com sucesso. Pronta para importação."
+                    )
+
+                else:
+
+                    st.error(
+                        status["erro"]
+                    )
+
+            except Exception as e:
+
+                st.error(str(e))
 
     # ==========================================
     # CONSULTAR / EDITAR

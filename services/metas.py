@@ -1,4 +1,5 @@
 import calendar
+import pandas as pd
 from datetime import date
 from database.connection import get_connection
 
@@ -73,6 +74,20 @@ MESES = {
     12: "Dezembro"
 }
 
+MESES_NUMERO = {
+    "Janeiro": 1,
+    "Fevereiro": 2,
+    "Março": 3,
+    "Abril": 4,
+    "Maio": 5,
+    "Junho": 6,
+    "Julho": 7,
+    "Agosto": 8,
+    "Setembro": 9,
+    "Outubro": 10,
+    "Novembro": 11,
+    "Dezembro": 12,
+}
 
 def obter_proximo_mes():
 
@@ -198,3 +213,126 @@ def abrir_novo_mes(simular=False):
 
     }
 
+# ==========================================
+# LER PLANILHA DE METAS
+# ==========================================
+
+def ler_planilha_metas(arquivo_excel):
+
+    xls = pd.ExcelFile(arquivo_excel)
+
+    nomes_meses = list(MESES.values())
+
+    nome_aba = None
+
+    for aba in xls.sheet_names:
+
+        if aba.strip().capitalize() in nomes_meses:
+
+            nome_aba = aba
+            break
+
+    if nome_aba is None:
+
+        raise ValueError(
+            "Nenhuma aba correspondente a um mês foi encontrada."
+        )
+
+    df = pd.read_excel(
+        arquivo_excel,
+        sheet_name=nome_aba,
+        header=4
+    )
+
+    return {
+
+        "nome_mes": nome_aba,
+        "mes": MESES_NUMERO[nome_aba],
+        "dados": df
+
+    }
+
+# ==========================================
+# PREPARAR PLANILHA DE METAS
+# ==========================================
+
+def preparar_planilha_metas(df):
+
+    df = df[
+        [
+            "Dia",
+            "Meta"
+        ]
+    ].copy()
+
+    df["Dia"] = pd.to_numeric(
+        df["Dia"],
+        errors="coerce"
+    )
+
+    df = df.dropna(subset=["Dia"])
+
+    df["Dia"] = df["Dia"].astype(int)
+
+    return df
+
+# ==========================================
+# MONTAR DATAFRAME DE IMPORTAÇÃO
+# ==========================================
+
+def montar_dataframe_importacao(df, ano, mes):
+
+    df = df.copy()
+
+    df["data"] = pd.to_datetime({
+        "year": ano,
+        "month": mes,
+        "day": df["Dia"]
+    }).dt.date
+
+    df = df[
+        [
+            "data",
+            "Meta"
+        ]
+    ]
+
+    df = df.rename(
+        columns={
+            "Meta": "meta"
+        }
+    )
+
+    return df
+
+# ==========================================
+# VALIDAR IMPORTAÇÃO DE METAS
+# ==========================================
+
+def validar_importacao_metas(df):
+
+    ano = df["data"].iloc[0].year
+    mes = df["data"].iloc[0].month
+
+    status = obter_status_mes(
+        ano,
+        mes
+    )
+
+    if not status["calendario"]:
+
+        return {
+
+            "valido": False,
+            "erro": "O calendário deste mês ainda não foi criado."
+
+        }
+
+    return {
+
+        "valido": True,
+        "dias_planilha": len(df),
+        "dias_banco": status["dias_cadastrados"],
+        "meta_mensal": float(df["meta"].sum())
+
+    }
