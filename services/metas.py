@@ -381,3 +381,78 @@ def importar_metas(df):
         "meta_mensal": float(df["meta"].sum())
 
     }
+
+# ==========================================
+# CONSULTAR META
+# ==========================================
+
+def consultar_meta(data):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            data,
+            meta
+        FROM base_fat
+        WHERE data = %s
+    """, (data,))
+
+    registro = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if registro is None:
+
+        raise ValueError(
+            "Nenhum registro encontrado para esta data."
+        )
+
+    return {
+
+        "data": registro[0],
+        "meta": float(registro[1]) if registro[1] else 0.0
+
+    }
+
+# ==========================================
+# EDITAR META
+# ==========================================
+
+def editar_meta(data, meta):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+
+        cursor.execute("""
+            UPDATE base_fat
+            SET meta = %s
+            WHERE data = %s
+        """, (
+            meta,
+            data
+        ))
+
+        if cursor.rowcount == 0:
+
+            raise ValueError(
+                "Nenhum registro encontrado para atualização."
+            )
+
+        conn.commit()
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        cursor.close()
+        conn.close()
+
+        

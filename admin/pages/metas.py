@@ -9,7 +9,9 @@ from services.metas import (
     preparar_planilha_metas,
     montar_dataframe_importacao,
     validar_importacao_metas,
-    importar_metas
+    importar_metas,
+    consultar_meta,
+    editar_meta
 )
 
 
@@ -350,6 +352,64 @@ def tela_metas():
 
     with st.expander("✏️ Consultar / Editar metas"):
 
-        st.info(
-            "Funcionalidade em desenvolvimento."
+        if "registro_meta" not in st.session_state:
+            st.session_state.registro_meta = None
+
+        data_consulta = st.date_input(
+            "Data",
+            value=date.today(),
+            format="DD/MM/YYYY",
+            key="data_meta"
         )
+
+        if st.button("🔍 Carregar Meta"):
+
+            try:
+
+                st.session_state.registro_meta = consultar_meta(
+                    data_consulta
+                )
+
+                st.success("Meta localizada com sucesso!")
+
+            except Exception as e:
+
+                st.error(str(e))
+
+        if st.session_state.registro_meta:
+
+            registro = st.session_state.registro_meta
+
+            st.divider()
+
+            meta = st.number_input(
+                "🎯 Meta diária",
+                value=float(registro["meta"]),
+                step=0.01,
+                format="%.2f"
+            )
+
+            st.divider()
+
+            if st.button("💾 Salvar Alterações"):
+
+                try:
+
+                    editar_meta(
+                        registro["data"],
+                        meta
+                    )
+
+                    st.success(
+                        "Meta atualizada com sucesso!"
+                    )
+
+                    st.session_state.registro_meta = consultar_meta(
+                        registro["data"]
+                    )
+
+                    st.rerun()
+
+                except Exception as e:
+
+                    st.error(str(e))

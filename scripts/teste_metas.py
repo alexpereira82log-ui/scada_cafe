@@ -1,60 +1,26 @@
+from datetime import date
+
 from services.metas import (
-    ler_planilha_metas,
-    preparar_planilha_metas,
-    montar_dataframe_importacao,
-    validar_importacao_metas,
-    importar_metas
+    consultar_meta,
+    editar_meta
 )
 
-# ==========================================
-# LEITURA DA PLANILHA
-# ==========================================
-
-resultado = ler_planilha_metas(
-    "data/input/modelo_plan_metas_dados_junho.xlsx"
+print("ANTES")
+print(
+    consultar_meta(
+        date(2026, 6, 26)
+    )
 )
 
-# ==========================================
-# PREPARAÇÃO DOS DADOS
-# ==========================================
-
-df = preparar_planilha_metas(
-    resultado["dados"]
+editar_meta(
+    date(2026, 6, 26),
+    2871.523875
 )
 
-# ==========================================
-# MONTAGEM DO DATAFRAME
-# ==========================================
-
-df = montar_dataframe_importacao(
-    df,
-    2026,
-    resultado["mes"]
+print()
+print("DEPOIS")
+print(
+    consultar_meta(
+        date(2026, 6, 26)
+    )
 )
-
-# ==========================================
-# VALIDAÇÃO
-# ==========================================
-
-status = validar_importacao_metas(df)
-
-print("STATUS DA VALIDAÇÃO")
-print(status)
-
-# ==========================================
-# IMPORTAÇÃO
-# ==========================================
-
-if status["valido"]:
-
-    resultado_importacao = importar_metas(df)
-
-    print()
-    print("RESULTADO DA IMPORTAÇÃO")
-    print(resultado_importacao)
-
-else:
-
-    print()
-    print("Importação cancelada.")
-    print(status["erro"])
