@@ -80,4 +80,5 @@ def exibir_area_admin():
         tela_metas()
 
     elif opcao == "⚠️ Perdas":
-        st.info("🚧 Em desenvolvimento")
+        tela_perdas()
+
