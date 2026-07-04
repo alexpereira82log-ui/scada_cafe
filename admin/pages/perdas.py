@@ -7,7 +7,8 @@ from services.perdas import (
     inserir_perda,
     carregar_colaboradores,
     consultar_perdas,
-    editar_perda
+    editar_perda,
+    excluir_perda
 )
 
 
@@ -21,6 +22,16 @@ def tela_perdas():
 
     st.divider()
 
+    if "mensagem_perda" not in st.session_state:
+        st.session_state.mensagem_perda = None
+
+    if st.session_state.mensagem_perda:
+
+        st.success(
+            st.session_state.mensagem_perda
+        )
+
+        st.session_state.mensagem_perda = None
 
     # ==========================================
     # ESTADO DA TELA
@@ -32,9 +43,6 @@ def tela_perdas():
     if "confirmar_exclusao_perda" not in st.session_state:
         st.session_state.confirmar_exclusao_perda = None
 
-    if "mensagem_perda" not in st.session_state:
-        st.session_state.mensagem_perda = None
-
     if "registros_perdas" not in st.session_state:
         st.session_state.registros_perdas = [] 
 
@@ -42,86 +50,94 @@ def tela_perdas():
 
     with st.expander("➕ Registrar Perda", expanded=True):
 
-        data = st.date_input(
-            "Data",
-            value=date.today(),
-            format="DD/MM/YYYY"
-        )
+        with st.form(
+            "form_nova_perda",
+            clear_on_submit=True
+        ):
 
-        item = st.text_input(
-            "Item"
-        )
+            data = st.date_input(
+                "Data",
+                value=date.today(),
+                format="DD/MM/YYYY"
+            )
 
-        categoria = st.selectbox(
-            "Categoria",
-            [
-                "Produto final",
-                "Utensilio",
-                "Insumo",
-                "Hortifruti",
-                "Produto de limpeza",
-                "Outro"
-            ]
-        )
+            item = st.text_input(
+                "Item"
+            )
 
-        qtd = st.text_input(
-            "Quantidade"
-        )
+            categoria = st.selectbox(
+                "Categoria",
+                [
+                    "Produto final",
+                    "Utensilio",
+                    "Insumo",
+                    "Hortifruti",
+                    "Produto de limpeza",
+                    "Outro"
+                ]
+            )
 
-        motivo = st.selectbox(
-            "Motivo",
-            [
-                "Lançamento errado",
-                "Erro de processo",
-                "Saiu sem pagar",
-                "Quebra",
-                "Venceu (validade)",
-                "Cliente",
-                "Outro"
-            ]
-        )
+            qtd = st.text_input(
+                "Quantidade"
+            )
 
-        responsavel = st.selectbox(
-            "Responsável",
-            colaboradores
-        )
+            motivo = st.selectbox(
+                "Motivo",
+                [
+                    "Lançamento errado",
+                    "Erro de processo",
+                    "Saiu sem pagar",
+                    "Quebra",
+                    "Venceu (validade)",
+                    "Cliente",
+                    "Outro"
+                ]
+            )
 
-        obs = st.text_area(
-            "Observação"
-        )
+            responsavel = st.selectbox(
+                "Responsável",
+                colaboradores
+            )
 
-        st.divider()
+            obs = st.text_area(
+                "Observação"
+            )
 
-        if st.button("💾 Salvar Registro"):
-            
-            if not item.strip():
+            st.divider()
 
-                st.warning("Informe o item da perda.")
+            if st.form_submit_button("💾 Salvar Registro"):
 
-            elif not qtd.strip():
+                if not item.strip():
 
-                st.warning("Informe a quantidade.")
+                    st.warning("Informe o item da perda.")
 
-            else:
-                try:
+                elif not qtd.strip():
 
-                    inserir_perda(
-                        data,
-                        item,
-                        categoria,
-                        qtd,
-                        motivo,
-                        responsavel,
-                        obs
-                    )
+                    st.warning("Informe a quantidade.")
 
-                    st.success(
-                        "Registro inserido com sucesso!"
-                    )
+                else:
 
-                except Exception as e:
+                    try:
 
-                    st.error(str(e))
+                        inserir_perda(
+                            data,
+                            item,
+                            categoria,
+                            qtd,
+                            motivo,
+                            responsavel,
+                            obs
+                        )
+
+                        st.session_state.mensagem_perda = (
+                            "Registro inserido com sucesso!"
+                        )
+
+                        st.rerun()
+
+                    except Exception as e:
+
+                        st.error(str(e))
 
     st.divider()
 
@@ -230,15 +246,14 @@ def tela_perdas():
 
             data = st.date_input(
                 "Data",
-                value=registro["data"],
+                value=date.today(),
                 format="DD/MM/YYYY",
-                key="editar_data"
+                key="nova_perda_data"
             )
 
             item = st.text_input(
                 "Item",
-                value=registro["item"],
-                key="editar_item"
+                key="nova_perda_item"
             )
 
             categorias = [
@@ -252,15 +267,13 @@ def tela_perdas():
 
             categoria = st.selectbox(
                 "Categoria",
-                categorias,
-                index=categorias.index(registro["categoria"]),
-                key="editar_categoria"
+                [...],
+                key="nova_perda_categoria"
             )
 
             qtd = st.text_input(
                 "Quantidade",
-                value=registro["qtd"],
-                key="editar_qtd"
+                key="nova_perda_qtd"
             )
 
             motivos = [
@@ -275,9 +288,8 @@ def tela_perdas():
 
             motivo = st.selectbox(
                 "Motivo",
-                motivos,
-                index=motivos.index(registro["motivo"]),
-                key="editar_motivo"
+                [...],
+                key="nova_perda_motivo"
             )
 
             if registro["responsavel"] in colaboradores:
@@ -293,14 +305,12 @@ def tela_perdas():
             responsavel = st.selectbox(
                 "Responsável",
                 colaboradores,
-                index=indice,
-                key="editar_responsavel"
+                key="nova_perda_responsavel"
             )
 
             obs = st.text_area(
                 "Observação",
-                value=registro["obs"],
-                key="editar_obs"
+                key="nova_perda_obs"
             )
 
             st.divider()
@@ -347,5 +357,71 @@ def tela_perdas():
                 if st.button("Cancelar"):
 
                     st.session_state.registro_perda = None
+
+                    for campo in [
+                        "nova_perda_data",
+                        "nova_perda_item",
+                        "nova_perda_categoria",
+                        "nova_perda_qtd",
+                        "nova_perda_motivo",
+                        "nova_perda_responsavel",
+                        "nova_perda_obs"
+                    ]:
+
+                        if campo in st.session_state:
+
+                            del st.session_state[campo]
+
+                    st.rerun()
+
+        # ==========================================
+        # CONFIRMAR EXCLUSÃO
+        # ==========================================
+
+        if st.session_state.confirmar_exclusao_perda:
+
+            registro = st.session_state.confirmar_exclusao_perda
+
+            st.divider()
+
+            st.warning(
+                f"Tem certeza que deseja excluir a perda '{registro['item']}'?"
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                if st.button(
+                    "🗑️ Confirmar Exclusão"
+                ):
+
+                    try:
+
+                        excluir_perda(
+                            registro["id"]
+                        )
+
+                        st.session_state.confirmar_exclusao_perda = None
+
+                        st.session_state.registros_perdas = consultar_perdas(
+                            data_consulta
+                        )
+
+                        st.session_state.mensagem_perda = (
+                            "Registro excluído com sucesso!"
+                        )
+
+                        st.rerun()
+
+                    except Exception as e:
+
+                        st.error(str(e))
+
+            with col2:
+
+                if st.button("Cancelar Exclusão"):
+
+                    st.session_state.confirmar_exclusao_perda = None
 
                     st.rerun()
