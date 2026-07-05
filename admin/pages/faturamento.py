@@ -56,6 +56,12 @@ def tela_faturamento():
 
         registro = st.session_state.registro_faturamento
 
+        # Tratamento de valores nulos vindos do banco
+        faturamento_atual = float(registro["faturamento"] or 0)
+        cupom_atual = int(registro["cupom"] or 0)
+        meta_atual = float(registro["meta"] or 0)
+        ticket_medio_atual = float(registro["ticket_medio"] or 0)
+
         st.divider()
 
         col1, col2 = st.columns(2)
@@ -64,13 +70,13 @@ def tela_faturamento():
 
             faturamento = st.number_input(
                 "💰 Faturamento",
-                value=float(registro["faturamento"]),
+                value=faturamento_atual,
                 step=1.0
             )
 
             cupom = st.number_input(
                 "🧾 Cupons",
-                value=int(registro["cupom"]),
+                value=cupom_atual,
                 step=1
             )
 
@@ -78,14 +84,14 @@ def tela_faturamento():
 
             meta = st.number_input(
                 "🎯 Meta",
-                value=float(registro["meta"]),
+                value=meta_atual,
                 step=0.01,
                 format="%.2f"
             )
 
             ticket_medio = st.number_input(
                 "🎟 Ticket Médio",
-                value=float(registro["ticket_medio"]),
+                value=ticket_medio_atual,
                 step=0.01,
                 format="%.2f"
             )

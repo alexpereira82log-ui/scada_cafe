@@ -6,6 +6,8 @@ from admin.pages.perdas import tela_perdas
 from admin.pages.metas import tela_metas
 from admin.pages.colaboradores import tela_colaboradores
 from admin.pages.importador import tela_importador
+from admin.pages.comissao import tela_comissao
+
 
 # ==========================================
 # ÁREA ADMINISTRATIVA
@@ -64,6 +66,7 @@ def exibir_area_admin():
             "💰 Faturamento",
             "🎯 Metas",
             "⚠️ Perdas",
+            "💰 Gestão de Comissão",
         ]
     )
 
@@ -82,3 +85,5 @@ def exibir_area_admin():
     elif opcao == "⚠️ Perdas":
         tela_perdas()
 
+    elif opcao == "💰 Gestão de Comissão":
+        tela_comissao()
