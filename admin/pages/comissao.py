@@ -24,7 +24,7 @@ def tela_comissao():
     # ==========================================================
 
     data = st.date_input(
-        "📅 Data da comissão"
+        "📅 Data da operação"
     )
 
     # ==========================================================
@@ -64,7 +64,7 @@ def tela_comissao():
 
     st.divider()
 
-    st.markdown("### 👥 Participantes")
+    st.markdown("### 👥 Participação do Dia")
 
     df_editado = st.data_editor(
         df,
@@ -74,7 +74,7 @@ def tela_comissao():
             "ID": None,
 
             "Participa": st.column_config.CheckboxColumn(
-                "Participa"
+                "Elegível"
             ),
 
             "Colaborador": st.column_config.TextColumn(
@@ -105,7 +105,7 @@ def tela_comissao():
     # Resumo financeiro
     # ==========================================================
 
-    st.markdown("### 📊 Resumo do Dia")
+    st.markdown("### 📊 Resultado do Rateio")
 
     col1, col2, col3, col4 = st.columns(4)
 
