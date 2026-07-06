@@ -9,6 +9,7 @@ from services.comissao_service import (
     listar_colaboradores_ativos,
 )
 
+from services.afastamento_service import aplicar_afastamento
 
 
 def tela_comissao():
@@ -21,6 +22,11 @@ def tela_comissao():
     if st.session_state.pop("comissao_salva", False):
         st.success(
             "Comissão atualizada com sucesso!"
+        )
+
+    if st.session_state.pop("afastamento_salvo", False):
+        st.success(
+            "Afastamento registrado com sucesso!"
         )
 
     # ==========================================================
@@ -186,18 +192,14 @@ def tela_comissao():
 
         colaboradores = listar_colaboradores_ativos()
 
-        nomes_colaboradores = [
-            colaborador["nome"]
-            for colaborador in colaboradores
-        ]
-
         col1, col2 = st.columns(2)
 
         with col1:
 
             colaborador = st.selectbox(
                 "👤 Colaborador",
-                options=nomes_colaboradores,
+                options=colaboradores,
+                format_func=lambda c: c["nome"],
             )
 
             motivo = st.selectbox(
@@ -221,7 +223,26 @@ def tela_comissao():
                 "📅 Data final"
             )
 
-        st.button(
-            "✔ Aplicar Afastamento",
+        btn_aplicar_afastamento = st.button(
+            "🗓️ Aplicar Afastamento",
             use_container_width=True,
         )
+
+        if btn_aplicar_afastamento:
+
+            afastamento = {
+                "colaborador_id": colaborador["id"],
+                "colaborador_nome": colaborador["nome"],
+                "data_inicio": data_inicio,
+                "data_fim": data_fim,
+                "motivo": motivo,
+                "observacao": "",
+            }
+
+            aplicar_afastamento(afastamento)
+
+            st.session_state["afastamento_salvo"] = True
+
+            st.rerun()
+
+            
