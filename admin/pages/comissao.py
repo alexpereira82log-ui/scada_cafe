@@ -18,6 +18,11 @@ def tela_comissao():
 
     st.subheader("💰 Gestão de Comissão")
 
+    if st.session_state.pop("comissao_salva", False):
+        st.success(
+            "Comissão atualizada com sucesso!"
+        )
+
     # ==========================================================
     # Resumo Mensal
     # ==========================================================
@@ -103,11 +108,21 @@ def tela_comissao():
                 ],
             )
 
-            participantes = df_editado.to_dict("records")
+            participantes_interface = df_editado.to_dict("records")
+
+            participantes = [
+                {
+                    "id": participante["ID"],
+                    "nome": participante["Colaborador"],
+                    "presente": participante["Participa"],
+                    "valor": participante["Comissão"],
+                }
+                for participante in participantes_interface
+            ]
 
             participantes, elegiveis, valor_individual = recalcular_rateio(
                 participantes,
-                valor_rateio
+                valor_rateio,
             )
 
             st.markdown("### 📊 Resultado do Rateio")
@@ -153,12 +168,10 @@ def tela_comissao():
 
                 salvar_rateio(
                     data,
-                    participantes
+                    participantes,
                 )
 
-                st.success(
-                    "Comissão atualizada com sucesso!"
-                )
+                st.session_state["comissao_salva"] = True
 
                 st.rerun()
 

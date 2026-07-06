@@ -32,6 +32,7 @@ def obter_comissao_dia(data):
     }
 
 
+
 def listar_rateio_dia(data):
     """
     Retorna os colaboradores e suas informações de comissão
@@ -75,13 +76,14 @@ def listar_rateio_dia(data):
     ]
 
 
+
 def recalcular_rateio(participantes, valor_rateio):
     """
     Recalcula a comissão dos colaboradores elegíveis.
     """
 
     elegiveis = sum(
-        participante["Participa"]
+        participante["presente"]
         for participante in participantes
     )
 
@@ -90,26 +92,25 @@ def recalcular_rateio(participantes, valor_rateio):
     else:
         valor_individual = 0
 
-
     for participante in participantes:
 
-        if participante["Participa"]:
-            participante["Comissão"] = round(
+        if participante["presente"]:
+            participante["valor"] = round(
                 valor_individual,
                 2
             )
-
         else:
-            participante["Comissão"] = 0
+            participante["valor"] = 0
 
     return participantes, elegiveis, valor_individual
+
 
 
 def salvar_rateio(data, participantes):
     """
     Atualiza o rateio da comissão dos colaboradores.
     """
-    
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -126,10 +127,10 @@ def salvar_rateio(data, participantes):
                 AND colaborador_id = %s
             """,
             (
-                participante["Participa"],
-                participante["Comissão"],
+                participante["presente"],
+                participante["valor"],
                 data,
-                participante["ID"],
+                participante["id"],
             ),
         )
 
@@ -169,3 +170,71 @@ def listar_colaboradores_ativos():
         }
         for linha in resultados
     ]
+
+
+
+def recalcular_comissao_dia(data):
+    """
+    Recalcula toda a comissão de uma determinada data.
+
+    Fluxo:
+        1. Obtém a comissão do dia.
+        2. Obtém os participantes.
+        3. Recalcula o rateio.
+        4. Salva os novos valores.
+
+    Esta função será reutilizada por:
+        - Gestão de Comissão
+        - Afastamentos Programados
+        - Importador de Fechamento
+        - Futuras rotinas administrativas
+    """
+
+    # ==========================================================
+    # Buscar comissão do dia
+    # ==========================================================
+
+    comissao = obter_comissao_dia(data)
+
+    if comissao is None:
+        return False
+    
+    # ==========================================================
+    # Buscar participantes do dia
+    # ==========================================================
+
+    participantes = listar_rateio_dia(data)
+
+    if not participantes:
+        return False
+    
+    # ==========================================================
+    # Calcular valor do rateio
+    # ==========================================================
+
+    valor_taxa = float(
+        comissao["valor_taxa_servico"] or 0
+    )
+
+    valor_rateio = valor_taxa * 0.80
+
+    # ==========================================================
+    # Recalcular rateio
+    # ==========================================================
+
+    participantes, elegiveis, valor_individual = recalcular_rateio(
+        participantes,
+        valor_rateio,
+    )
+
+    # ==========================================================
+    # Salvar novo rateio
+    # ==========================================================
+
+    salvar_rateio(
+        data,
+        participantes,
+    )
+
+    return True
+
