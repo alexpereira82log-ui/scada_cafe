@@ -138,3 +138,34 @@ def salvar_rateio(data, participantes):
     cursor.close()
     conn.close()
 
+
+
+def listar_colaboradores_ativos():
+    """
+    Retorna todos os colaboradores ativos ordenados pelo nome.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT id, nome
+        FROM colaboradores
+        WHERE ativo = TRUE
+        ORDER BY nome
+        """
+    )
+
+    resultados = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return [
+        {
+            "id": linha[0],
+            "nome": linha[1],
+        }
+        for linha in resultados
+    ]
