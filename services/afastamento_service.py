@@ -1,4 +1,11 @@
+from datetime import timedelta
+
 from database.connection import get_connection
+from services.comissao_service import (
+    existe_comissao_dia,
+    atualizar_presenca,
+    recalcular_comissao_dia,
+)
 
 
 def registrar_afastamento(afastamento):
@@ -95,4 +102,42 @@ def aplicar_afastamento(afastamento):
 
     registrar_afastamento(afastamento)
 
+    datas = listar_datas_periodo(
+        afastamento["data_inicio"],
+        afastamento["data_fim"],
+    )
+
+    for data in datas:
+
+        if existe_comissao_dia(data):
+
+            atualizar_presenca(
+                data,
+                afastamento["colaborador_id"],
+                False,
+            )
+
+            recalcular_comissao_dia(data)
+
     return True
+
+
+
+def listar_datas_periodo(data_inicio, data_fim):
+    """
+    Retorna todas as datas compreendidas no período.
+    """
+
+    datas = []
+
+    data = data_inicio
+
+    while data <= data_fim:
+
+        datas.append(data)
+
+        data += timedelta(days=1)
+
+    return datas
+
+

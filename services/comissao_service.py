@@ -238,3 +238,62 @@ def recalcular_comissao_dia(data):
 
     return True
 
+
+def existe_comissao_dia(data):
+    """
+    Verifica se existe comissão cadastrada para uma data.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT 1
+        FROM comissao_dia
+        WHERE data = %s
+        """,
+        (data,)
+    )
+
+    existe = cursor.fetchone() is not None
+
+    cursor.close()
+    conn.close()
+
+    return existe
+
+
+def atualizar_presenca(
+    data,
+    colaborador_id,
+    presente,
+):
+    """
+    Atualiza a presença de um colaborador em uma data.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE comissao_colaborador
+        SET presente = %s
+        WHERE
+            data = %s
+            AND colaborador_id = %s
+        """,
+        (
+            presente,
+            data,
+            colaborador_id,
+        ),
+    )
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+
