@@ -79,7 +79,7 @@ def tela_comissao():
 
     with col5:
         st.metric(
-            "📈 Projeção Final",
+            "📈 Projeção Individual",
             f"R$ {resumo['projecao_final']:,.2f}"
         )
 

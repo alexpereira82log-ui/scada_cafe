@@ -306,7 +306,14 @@ def obter_resumo_mensal_comissao(
 ):
     """
     Retorna os indicadores gerenciais da comissão
-    para um determinado mês.
+    para o mês informado.
+
+    Indicadores:
+    - Taxa de Serviço
+    - Comissão Total (80%)
+    - Média Diária
+    - Média Individual
+    - Projeção Individual (considerando presença integral)
     """
 
     conn = get_connection()
@@ -343,6 +350,7 @@ def obter_resumo_mensal_comissao(
     taxa_servico = float(resultado[0])
     dias_comissao = resultado[1]
 
+
     # ==========================================================
     # Média individual
     # ==========================================================
@@ -350,8 +358,7 @@ def obter_resumo_mensal_comissao(
     cursor.execute(
         """
         SELECT
-            AVG(valor),
-            COALESCE(SUM(valor), 0)
+            AVG(valor)
         FROM
             comissao_colaborador
         WHERE
@@ -367,11 +374,51 @@ def obter_resumo_mensal_comissao(
 
     resultado = cursor.fetchone()
 
-    media_individual = float(resultado[0] or 0)
-
-    comissao_individual_acumulada = float(
-        resultado[1] or 0
+    media_individual = float(
+        resultado[0] or 0
     )
+
+
+    # ==========================================================
+    # Acumulado de presença integral
+    # ==========================================================
+
+    cursor.execute(
+        """
+        SELECT
+            COALESCE(
+                MAX(total_colaborador),
+                0
+            )
+        FROM
+        (
+            SELECT
+                colaborador_id,
+                SUM(valor) AS total_colaborador
+
+            FROM
+                comissao_colaborador
+
+            WHERE
+                presente = TRUE
+                AND EXTRACT(YEAR FROM data) = %s
+                AND EXTRACT(MONTH FROM data) = %s
+
+            GROUP BY colaborador_id
+        ) t
+        """,
+        (
+            ano,
+            mes,
+        ),
+    )
+
+    resultado = cursor.fetchone()
+
+    acumulado_presenca_integral = float(
+        resultado[0] or 0
+    )
+
 
     # ==========================================================
     # Cálculos
@@ -405,7 +452,7 @@ def obter_resumo_mensal_comissao(
 
 
     projecao_final = (
-        comissao_individual_acumulada
+        acumulado_presenca_integral
         +
         (
             media_individual
