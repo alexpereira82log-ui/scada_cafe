@@ -12,7 +12,10 @@ from services.comissao_service import (
     obter_resumo_mensal_comissao,
 )
 
-from services.afastamento_service import aplicar_afastamento
+from services.afastamento_service import (
+    aplicar_afastamento,
+    obter_calendario_mensal,
+)
 
 
 def tela_comissao():
@@ -289,4 +292,31 @@ def tela_comissao():
 
             st.rerun()
 
-            
+    
+    # ==========================================================
+    # Calendário Mensal
+    # ==========================================================
+
+    with st.expander(
+        "📅 Calendário Mensal",
+        expanded=False,
+    ):
+
+        calendario = obter_calendario_mensal(
+            ano,
+            mes,
+        )
+
+        df_calendario = pd.DataFrame(
+            calendario
+        )
+
+        styler = df_calendario.style
+
+        st.dataframe(
+            styler,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+

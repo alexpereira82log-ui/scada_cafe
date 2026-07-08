@@ -1,11 +1,37 @@
-from datetime import timedelta
+import calendar
 
+from datetime import (
+    timedelta,
+    date,
+)
 from database.connection import get_connection
 from services.comissao_service import (
     existe_comissao_dia,
     atualizar_presenca,
     recalcular_comissao_dia,
+    listar_colaboradores_ativos
 )
+
+
+# ==========================================================
+# Status do calendário de participação
+# ==========================================================
+
+STATUS_PRESENTE = "✔"
+
+STATUS_FERIAS = "Férias"
+
+STATUS_ATESTADO = "Atestado"
+
+STATUS_LICENCA = "Licensa"
+
+STATUS_FOLGA = "Folga"
+
+STATUS_FALTA = "Falta"
+
+STATUS_OUTRO = "Outro"
+
+STATUS_AFASTADO = "Afastamento"
 
 
 def registrar_afastamento(afastamento):
@@ -139,5 +165,237 @@ def listar_datas_periodo(data_inicio, data_fim):
         data += timedelta(days=1)
 
     return datas
+
+
+def listar_afastamentos_mes(
+    ano,
+    mes,
+):
+    """
+    Retorna todos os afastamentos ativos que
+    possuem interseção com o mês informado.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            colaborador_id,
+            data_inicio,
+            data_fim,
+            motivo
+        FROM
+            afastamentos_programados
+        WHERE
+            ativo = TRUE
+            AND data_inicio <= %s
+            AND data_fim >= %s
+        ORDER BY
+            colaborador_id,
+            data_inicio
+        """,
+        (
+            date(
+                ano,
+                mes,
+                calendar.monthrange(
+                    ano,
+                    mes,
+                )[1]
+            ),
+            date(
+                ano,
+                mes,
+                1,
+            ),
+        ),
+    )
+
+    resultados = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return [
+        {
+            "colaborador_id": linha[0],
+            "data_inicio": linha[1],
+            "data_fim": linha[2],
+            "motivo": linha[3],
+        }
+        for linha in resultados
+    ]
+
+
+def listar_faltas_mes(
+    ano,
+    mes,
+):
+    """
+    Retorna todas as faltas registradas
+    na comissão do mês.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            colaborador_id,
+            data
+        FROM
+            comissao_colaborador
+        WHERE
+            presente = FALSE
+            AND EXTRACT(YEAR FROM data) = %s
+            AND EXTRACT(MONTH FROM data) = %s
+        ORDER BY
+            data,
+            colaborador_id
+        """,
+        (
+            ano,
+            mes,
+        ),
+    )
+
+    resultados = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return [
+        {
+            "colaborador_id": linha[0],
+            "data": linha[1],
+        }
+        for linha in resultados
+    ]
+
+
+
+def obter_calendario_mensal(
+    ano,
+    mes,
+):
+    """
+    Monta o calendário mensal de participação dos colaboradores.
+    """
+
+    colaboradores = listar_colaboradores_ativos()
+
+    afastamentos = listar_afastamentos_mes(
+        ano,
+        mes,
+    )
+
+    faltas = listar_faltas_mes(
+        ano,
+        mes,
+    )
+
+
+    indice_afastamentos = {}
+
+    for afastamento in afastamentos:
+
+        data = afastamento["data_inicio"]
+
+        while data <= afastamento["data_fim"]:
+
+            indice_afastamentos[
+                (
+                    afastamento["colaborador_id"],
+                    data,
+                )
+            ] = afastamento["motivo"]
+
+            data += timedelta(days=1)
+
+    dias_mes = calendar.monthrange(
+        ano,
+        mes,
+    )[1]
+
+
+    indice_faltas = {}
+
+    for falta in faltas:
+
+        indice_faltas[
+            (
+                falta["colaborador_id"],
+                falta["data"],
+            )
+        ] = STATUS_FALTA
+
+    calendario = []
+
+    for dia in range(1, dias_mes + 1):
+
+        data_atual = date(
+            ano,
+            mes,
+            dia,
+        )
+
+        dias_semana = [
+            "Seg",
+            "Ter",
+            "Qua",
+            "Qui",
+            "Sex",
+            "Sáb",
+            "Dom",
+        ]
+
+        linha = {
+            "Data": (
+                f"{data_atual.strftime('%d/%m')} "
+                f"({dias_semana[data_atual.weekday()]})"
+            )
+        }
+
+        for colaborador in colaboradores:
+
+            chave = (
+                colaborador["id"],
+                data_atual,
+            )
+
+            motivo = indice_afastamentos.get(chave)
+
+            if motivo is not None:
+
+                if motivo == "Férias":
+                    status = STATUS_FERIAS
+
+                elif motivo == "Atestado":
+                    status = STATUS_ATESTADO
+
+                elif motivo == "Licença":
+                    status = STATUS_LICENCA
+
+                elif motivo == "Folga":
+                    status = STATUS_FOLGA
+
+                else:
+                    status = STATUS_OUTRO
+
+            else:
+
+                status = indice_faltas.get(
+                    chave,
+                    STATUS_PRESENTE,
+                )
+
+            linha[colaborador["nome"]] = status
+
+        calendario.append(linha)
+
+    return calendario
 
 
