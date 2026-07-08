@@ -1,12 +1,15 @@
 import streamlit as st
 import pandas as pd
 
+from datetime import date
+
 from services.comissao_service import (
     obter_comissao_dia,
     listar_rateio_dia,
     recalcular_rateio,
     salvar_rateio,
     listar_colaboradores_ativos,
+    obter_resumo_mensal_comissao,
 )
 
 from services.afastamento_service import aplicar_afastamento
@@ -19,6 +22,8 @@ def tela_comissao():
 
     st.subheader("💰 Gestão de Comissão")
 
+
+
     if st.session_state.pop("comissao_salva", False):
         st.success(
             "Comissão atualizada com sucesso!"
@@ -29,15 +34,54 @@ def tela_comissao():
             "Afastamento registrado com sucesso!"
         )
 
+
+    hoje = date.today()
+
+    ano = hoje.year
+    mes = hoje.month
+
     # ==========================================================
     # Resumo Mensal
     # ==========================================================
 
     st.markdown("## 📈 Resumo Mensal")
 
-    st.info(
-        "Resumo mensal em desenvolvimento."
+    resumo = obter_resumo_mensal_comissao(
+        ano,
+        mes,
     )
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        st.metric(
+            "💰 Taxa Serviço",
+            f"R$ {resumo['taxa_servico']:,.2f}"
+        )
+
+    with col2:
+        st.metric(
+            "💵 Comissão (80%)",
+            f"R$ {resumo['comissao_total']:,.2f}"
+        )
+
+    with col3:
+        st.metric(
+            "📅 Média Diária",
+            f"R$ {resumo['media_diaria']:,.2f}"
+        )
+
+    with col4:
+        st.metric(
+            "👤 Média Individual",
+            f"R$ {resumo['media_individual']:,.2f}"
+        )
+
+    with col5:
+        st.metric(
+            "📈 Projeção Final",
+            f"R$ {resumo['projecao_final']:,.2f}"
+        )
 
     # ==========================================================
     # Comissão Diária

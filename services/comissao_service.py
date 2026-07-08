@@ -1,5 +1,7 @@
-from database.connection import get_connection
+import calendar
 
+from database.connection import get_connection
+from datetime import date
 
 def obter_comissao_dia(data):
     """
@@ -297,3 +299,127 @@ def atualizar_presenca(
     conn.close()
 
 
+
+def obter_resumo_mensal_comissao(
+    ano,
+    mes,
+):
+    """
+    Retorna os indicadores gerenciais da comissão
+    para um determinado mês.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # ==========================================================
+    # Taxa de serviço e dias com comissão
+    # ==========================================================
+
+    cursor.execute(
+        """
+        SELECT
+            COALESCE(
+                SUM(comiss_dia),
+                0
+            ) AS taxa_servico,
+
+            COUNT(*) AS dias_comissao
+
+        FROM comissao_dia
+
+        WHERE
+            EXTRACT(YEAR FROM data) = %s
+            AND EXTRACT(MONTH FROM data) = %s
+        """,
+        (
+            ano,
+            mes,
+        ),
+    )
+
+    resultado = cursor.fetchone()
+
+    taxa_servico = float(resultado[0])
+    dias_comissao = resultado[1]
+
+    # ==========================================================
+    # Média individual
+    # ==========================================================
+
+    cursor.execute(
+        """
+        SELECT
+            AVG(valor),
+            COALESCE(SUM(valor), 0)
+        FROM
+            comissao_colaborador
+        WHERE
+            presente = TRUE
+            AND EXTRACT(YEAR FROM data) = %s
+            AND EXTRACT(MONTH FROM data) = %s
+        """,
+        (
+            ano,
+            mes,
+        ),
+    )
+
+    resultado = cursor.fetchone()
+
+    media_individual = float(resultado[0] or 0)
+
+    comissao_individual_acumulada = float(
+        resultado[1] or 0
+    )
+
+    # ==========================================================
+    # Cálculos
+    # ==========================================================
+
+    comissao_total = taxa_servico * 0.80
+
+    if dias_comissao > 0:
+        media_diaria = comissao_total / dias_comissao
+    else:
+        media_diaria = 0
+
+
+
+    # ==========================================================
+    # Projeção final
+    # ==========================================================
+
+    dias_mes = calendar.monthrange(
+        ano,
+        mes,
+    )[1]
+
+
+    hoje = date.today()
+
+    if ano == hoje.year and mes == hoje.month:
+        dias_restantes_mes = dias_mes - hoje.day
+    else:
+        dias_restantes_mes = 0
+
+
+    projecao_final = (
+        comissao_individual_acumulada
+        +
+        (
+            media_individual
+            * dias_restantes_mes
+        )
+    )
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "taxa_servico": taxa_servico,
+        "comissao_total": comissao_total,
+        "media_diaria": media_diaria,
+        "media_individual": media_individual,
+        "projecao_final": projecao_final,
+    }
