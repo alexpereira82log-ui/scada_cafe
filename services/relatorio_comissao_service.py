@@ -127,6 +127,42 @@ def obter_relatorio_mensal_comissao(
             linha
         )
 
+    # ==========================================================
+    # Linha de totais
+    # ==========================================================
+
+    totais = {
+        "Data": "TOTAL",
+    }
+
+    for coluna in relatorio[0].keys():
+
+        if coluna == "Data":
+            continue
+
+        totais[coluna] = 0
+
+    # ==========================================================
+    # Soma dos valores
+    # ==========================================================
+
+    for linha in relatorio:
+
+        for coluna in totais:
+
+            if coluna == "Data":
+                continue
+
+            totais[coluna] += linha[coluna]
+
+    # ==========================================================
+    # Adiciona a linha TOTAL ao relatório
+    # ==========================================================
+
+    relatorio.append(
+        totais
+    )
+
     return relatorio
 
 

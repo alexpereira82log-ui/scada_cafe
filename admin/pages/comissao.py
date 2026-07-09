@@ -21,6 +21,9 @@ from services.relatorio_comissao_service import (
     obter_relatorio_mensal_comissao,
 )
 
+from services.exportacao_excel import (
+    exportar_dataframe_excel,
+)
 
 
 
@@ -359,3 +362,20 @@ def tela_comissao():
             use_container_width=True,
             hide_index=True,
         )
+
+        if st.button(
+            "📄 Exportar para Excel",
+            use_container_width=True,
+        ):
+
+            caminho = "exports/relatorio_comissao.xlsx"
+
+            exportar_dataframe_excel(
+                df_relatorio,
+                caminho,
+            )
+
+            st.success(
+                f"Relatório exportado com sucesso!\n\nArquivo: {caminho}"
+            )
+
