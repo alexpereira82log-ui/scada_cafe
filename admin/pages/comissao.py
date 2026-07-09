@@ -17,6 +17,12 @@ from services.afastamento_service import (
     obter_calendario_mensal,
 )
 
+from services.relatorio_comissao_service import (
+    obter_relatorio_mensal_comissao,
+)
+
+
+
 
 def tela_comissao():
     """
@@ -319,4 +325,37 @@ def tela_comissao():
             hide_index=True,
         )
 
+    # ==========================================================
+    # Relatório Gerencial
+    # ==========================================================
 
+    with st.expander(
+        "📊 Relatório Gerencial de Comissão",
+        expanded=False,
+    ):
+
+        relatorio = obter_relatorio_mensal_comissao(
+            ano,
+            mes,
+        )
+
+        df_relatorio = pd.DataFrame(
+            relatorio
+        )
+
+        # ==========================================================
+        # Formatação monetária
+        # ==========================================================
+
+        colunas_valores = df_relatorio.columns[1:]
+
+        df_relatorio[colunas_valores] = (
+            df_relatorio[colunas_valores]
+            .round(2)
+        )
+
+        st.dataframe(
+            df_relatorio,
+            use_container_width=True,
+            hide_index=True,
+        )

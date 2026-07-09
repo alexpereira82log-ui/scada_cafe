@@ -3,6 +3,9 @@ import calendar
 from database.connection import get_connection
 from datetime import date
 
+
+
+
 def obter_comissao_dia(data):
     """
     Retorna o registro da comissão de um determinado dia.
@@ -470,3 +473,9 @@ def obter_resumo_mensal_comissao(
         "media_individual": media_individual,
         "projecao_final": projecao_final,
     }
+
+
+
+
+
+
