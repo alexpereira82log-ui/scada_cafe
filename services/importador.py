@@ -17,6 +17,11 @@ from services.persistencia import (
     salvar_produtos
 )
 
+from services.comissao_service import (
+    criar_participantes_comissao,
+    recalcular_comissao_dia,
+)
+
 
 # ==========================================
 # PREPARAR BASE_FAT
@@ -140,6 +145,31 @@ def executar_importacao(data_relatorio: str, folder_id: str):
             data=dados_importados["data"],
             comissao_dia=dados_importados["comissao_dia"],
         )
+
+        # ==========================================================
+        # Inicializa automaticamente os participantes da comissão
+        # ==========================================================
+
+        criar_participantes_comissao(
+            conn,
+            dados_importados["data"],
+        )
+
+        # ==========================================================
+        # Confirma a criação dos participantes
+        # antes do recálculo da comissão
+        # ==========================================================
+
+        conn.commit()
+
+        # ==========================================================
+        # Recalcula automaticamente a comissão do dia
+        # ==========================================================
+
+        recalcular_comissao_dia(
+            dados_importados["data"],
+        )
+
 
         linhas_produtos = salvar_produtos(
             conn=conn,

@@ -475,6 +475,70 @@ def obter_resumo_mensal_comissao(
     }
 
 
+# ==========================================================
+# Criar participantes da comissão
+# ==========================================================
+
+def criar_participantes_comissao(
+    conn,
+    data,
+):
+    """
+    Cria automaticamente os participantes da
+    comissão para a data informada.
+    """
+
+    colaboradores = listar_colaboradores_ativos()
+
+    cursor = conn.cursor()
+
+    # ==========================================================
+    # Remove participantes existentes da data
+    # ==========================================================
+
+    cursor.execute(
+        """
+        DELETE FROM comissao_colaborador
+        WHERE data = %s
+        """,
+        (
+            data,
+        ),
+    )
+
+    # ==========================================================
+    # Cria os participantes do dia
+    # ==========================================================
+
+    for colaborador in colaboradores:
+
+        cursor.execute(
+            """
+            INSERT INTO comissao_colaborador
+            (
+                data,
+                colaborador_id,
+                presente,
+                valor,
+                observacao
+            )
+            VALUES
+            (
+                %s,
+                %s,
+                TRUE,
+                0,
+                NULL
+            )
+            """,
+            (
+                data,
+                colaborador["id"],
+            ),
+        )
+
+    cursor.close()
+
 
 
 
