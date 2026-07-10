@@ -22,6 +22,10 @@ from services.comissao_service import (
     recalcular_comissao_dia,
 )
 
+from services.afastamento_service import (
+    aplicar_afastamentos_importacao,
+)
+
 
 # ==========================================
 # PREPARAR BASE_FAT
@@ -154,6 +158,16 @@ def executar_importacao(data_relatorio: str, folder_id: str):
             conn,
             dados_importados["data"],
         )
+
+        # ==========================================================
+        # Aplica automaticamente os afastamentos programados
+        # ==========================================================
+
+        aplicar_afastamentos_importacao(
+            conn,
+            dados_importados["data"],
+        )
+
 
         # ==========================================================
         # Confirma a criação dos participantes

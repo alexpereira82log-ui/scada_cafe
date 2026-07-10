@@ -229,6 +229,98 @@ def listar_afastamentos_mes(
     ]
 
 
+# ==========================================================
+# Afastamentos de uma data
+# ==========================================================
+
+def listar_afastamentos_data(
+    data,
+):
+    """
+    Retorna todos os afastamentos ativos
+    para uma data específica.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            colaborador_id,
+            motivo
+        FROM
+            afastamentos_programados
+        WHERE
+            ativo = TRUE
+            AND data_inicio <= %s
+            AND data_fim >= %s
+        ORDER BY
+            colaborador_id
+        """,
+        (
+            data,
+            data,
+        ),
+    )
+
+    resultados = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return [
+        {
+            "colaborador_id": linha[0],
+            "motivo": linha[1],
+        }
+        for linha in resultados
+    ]
+
+
+# ==========================================================
+# Aplicação automática de afastamentos
+# ==========================================================
+
+def aplicar_afastamentos_importacao(
+    conn,
+    data,
+):
+    """
+    Aplica automaticamente os afastamentos
+    programados durante a importação do relatório.
+    """
+
+    afastamentos = listar_afastamentos_data(
+        data,
+    )
+
+    if not afastamentos:
+        return
+
+    cursor = conn.cursor()
+
+    for afastamento in afastamentos:
+
+        cursor.execute(
+            """
+            UPDATE comissao_colaborador
+            SET
+                presente = FALSE
+            WHERE
+                data = %s
+                AND colaborador_id = %s
+            """,
+            (
+                data,
+                afastamento["colaborador_id"],
+            ),
+        )
+
+    cursor.close()
+
+
+
 def listar_faltas_mes(
     ano,
     mes,
