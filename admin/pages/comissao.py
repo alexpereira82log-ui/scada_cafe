@@ -14,7 +14,9 @@ from services.comissao_service import (
 
 from services.afastamento_service import (
     aplicar_afastamento,
+    excluir_afastamento,
     obter_calendario_mensal,
+    listar_afastamentos,
 )
 
 from services.relatorio_comissao_service import (
@@ -238,11 +240,11 @@ def tela_comissao():
                 st.rerun()
 
     # ==========================================================
-    # Afastamentos Programados
+    # Novo Afastamento
     # ==========================================================
 
     with st.expander(
-        "🗓️ Afastamentos Programados",
+        "➕ Novo Afastamento",
         expanded=False,
     ):
 
@@ -301,7 +303,175 @@ def tela_comissao():
 
             st.rerun()
 
-    
+
+    # ==========================================================
+    # Afastamentos cadastrados
+    # ==========================================================
+
+    with st.expander(
+        "📋 Afastamentos Cadastrados",
+        expanded=True,
+    ):
+
+        afastamentos = listar_afastamentos()
+
+        if not afastamentos:
+
+            st.info(
+                "Nenhum afastamento cadastrado."
+            )
+
+        else:
+
+            df_afastamentos = pd.DataFrame(
+                afastamentos
+            )
+
+            # ==========================================================
+            # Ajustes de apresentação
+            # ==========================================================
+
+            df_afastamentos = df_afastamentos.drop(
+                columns=["id"],
+            )
+
+            df_afastamentos.rename(
+                columns={
+                    "colaborador": "Colaborador",
+                    "data_inicio": "Data Inicial",
+                    "data_fim": "Data Final",
+                    "motivo": "Motivo",
+                    "observacao": "Observação",
+                },
+                inplace=True,
+            )
+
+            df_afastamentos["Data Inicial"] = (
+                pd.to_datetime(
+                    df_afastamentos["Data Inicial"]
+                )
+                .dt.strftime("%d/%m/%Y")
+            )
+
+            df_afastamentos["Data Final"] = (
+                pd.to_datetime(
+                    df_afastamentos["Data Final"]
+                )
+                .dt.strftime("%d/%m/%Y")
+            )
+
+
+            st.dataframe(
+                df_afastamentos,
+                use_container_width=True,
+                hide_index=True,
+            )
+        
+            # ==========================================================
+            # Seleção do afastamento
+            # ==========================================================
+
+            afastamento_selecionado = st.selectbox(
+                "Selecione um afastamento",
+                options=afastamentos,
+                format_func=lambda a:
+                    f'{a["colaborador"]} | '
+                    f'{a["data_inicio"].strftime("%d/%m/%Y")} → '
+                    f'{a["data_fim"].strftime("%d/%m/%Y")} | '
+                    f'{a["motivo"]}',
+            )
+
+
+
+            st.divider()
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.markdown(
+                    f"**👤 Colaborador:** {afastamento_selecionado['colaborador']}"
+                )
+
+                st.markdown(
+                    f"**📌 Motivo:** {afastamento_selecionado['motivo']}"
+                )
+
+            with col2:
+
+                st.markdown(
+                    f"**📅 Data Inicial:** "
+                    f"{afastamento_selecionado['data_inicio'].strftime('%d/%m/%Y')}"
+                )
+
+                st.markdown(
+                    f"**📅 Data Final:** "
+                    f"{afastamento_selecionado['data_fim'].strftime('%d/%m/%Y')}"
+                )
+
+            st.markdown(
+                f"**📝 Observação:** "
+                f"{afastamento_selecionado['observacao'] or '-'}"
+            )
+
+            if st.button(
+                "🗑️ Excluir Afastamento",
+                use_container_width=True,
+            ):
+
+                st.session_state["confirmar_exclusao_afastamento"] = True
+
+            if st.session_state.get(
+                "confirmar_exclusao_afastamento",
+                False,
+            ):
+
+                st.warning(
+                    "⚠️ Esta operação removerá definitivamente este afastamento."
+                )
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    btn_confirmar_exclusao = st.button(
+                        "✅ Confirmar Exclusão",
+                        use_container_width=True,
+                    )
+
+                with col2:
+
+                    btn_cancelar_exclusao = st.button(
+                        "❌ Cancelar",
+                        use_container_width=True,
+                    )
+
+                
+                if btn_cancelar_exclusao:
+
+                    st.session_state[
+                        "confirmar_exclusao_afastamento"
+                    ] = False
+
+                    st.rerun()
+
+                if btn_confirmar_exclusao:
+
+                    excluir_afastamento(
+                        afastamento_selecionado["id"]
+                    )
+
+                    st.session_state[
+                        "confirmar_exclusao_afastamento"
+                    ] = False
+
+                    st.success(
+                        "Afastamento excluído com sucesso."
+                    )
+
+                    st.rerun()
+
+
     # ==========================================================
     # Calendário Mensal
     # ==========================================================

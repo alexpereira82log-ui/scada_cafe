@@ -148,6 +148,35 @@ def aplicar_afastamento(afastamento):
     return True
 
 
+# ==========================================================
+# Excluir afastamento
+# ==========================================================
+
+def excluir_afastamento(
+    afastamento_id,
+):
+    """
+    Exclui um afastamento programado.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM afastamentos_programados
+        WHERE id = %s
+        """,
+        (
+            afastamento_id,
+        ),
+    )
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
 
 def listar_datas_periodo(data_inicio, data_fim):
     """
