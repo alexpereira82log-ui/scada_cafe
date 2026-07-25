@@ -316,8 +316,6 @@ def tela_metas():
 
                                     st.session_state.confirmar_importacao_metas = False
 
-                                    st.session_state.confirmar_importacao_metas = False
-
                                     st.session_state.mensagem_importacao = (
                                         f"""
                                     Importação concluída com sucesso!
