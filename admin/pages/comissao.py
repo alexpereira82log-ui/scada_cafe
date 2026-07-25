@@ -10,13 +10,16 @@ from services.comissao_service import (
     salvar_rateio,
     listar_colaboradores_ativos,
     obter_resumo_mensal_comissao,
+
 )
 
 from services.afastamento_service import (
     aplicar_afastamento,
     excluir_afastamento,
+    atualizar_afastamento,
     obter_calendario_mensal,
     listar_afastamentos,
+
 )
 
 from services.relatorio_comissao_service import (
@@ -327,12 +330,16 @@ def tela_comissao():
                 afastamentos
             )
 
+
             # ==========================================================
             # Ajustes de apresentação
             # ==========================================================
 
             df_afastamentos = df_afastamentos.drop(
-                columns=["id"],
+                columns=[
+                    "id",
+                    "colaborador_id",
+                ]
             )
 
             df_afastamentos.rename(
@@ -382,37 +389,90 @@ def tela_comissao():
             )
 
 
-
             st.divider()
 
             col1, col2 = st.columns(2)
 
             with col1:
 
-                st.markdown(
-                    f"**👤 Colaborador:** {afastamento_selecionado['colaborador']}"
+                colaborador_edicao = st.selectbox(
+                    "👤 Colaborador",
+                    options=colaboradores,
+                    index=next(
+                        i
+                        for i, c in enumerate(colaboradores)
+                        if c["id"] == afastamento_selecionado["colaborador_id"]
+                    ),
+                    format_func=lambda c: c["nome"],
+                    key="editar_colaborador",
                 )
 
-                st.markdown(
-                    f"**📌 Motivo:** {afastamento_selecionado['motivo']}"
+                motivo_edicao = st.selectbox(
+                    "📌 Motivo",
+                    options=[
+                        "Férias",
+                        "Atestado",
+                        "Folga",
+                        "Licença",
+                        "Outro",
+                    ],
+                    index=[
+                        "Férias",
+                        "Atestado",
+                        "Folga",
+                        "Licença",
+                        "Outro",
+                    ].index(afastamento_selecionado["motivo"]),
+                    key="editar_motivo",
                 )
 
             with col2:
 
-                st.markdown(
-                    f"**📅 Data Inicial:** "
-                    f"{afastamento_selecionado['data_inicio'].strftime('%d/%m/%Y')}"
+                data_inicio_edicao = st.date_input(
+                    "📅 Data Inicial",
+                    value=afastamento_selecionado["data_inicio"],
+                    key="editar_data_inicio",
                 )
 
-                st.markdown(
-                    f"**📅 Data Final:** "
-                    f"{afastamento_selecionado['data_fim'].strftime('%d/%m/%Y')}"
+                data_fim_edicao = st.date_input(
+                    "📅 Data Final",
+                    value=afastamento_selecionado["data_fim"],
+                    key="editar_data_fim",
                 )
 
-            st.markdown(
-                f"**📝 Observação:** "
-                f"{afastamento_selecionado['observacao'] or '-'}"
+            observacao_edicao = st.text_area(
+                "📝 Observação",
+                value=afastamento_selecionado["observacao"] or "",
+                key="editar_observacao",
             )
+
+
+            salvar_alteracoes = st.button(
+                "💾 Salvar Alterações",
+                use_container_width=True,
+            )
+
+            if salvar_alteracoes:
+
+                afastamento = {
+                    "id": afastamento_selecionado["id"],
+                    "colaborador_id": colaborador_edicao["id"],
+                    "data_inicio": data_inicio_edicao,
+                    "data_fim": data_fim_edicao,
+                    "motivo": motivo_edicao,
+                    "observacao": observacao_edicao,
+                }
+
+                atualizar_afastamento(
+                    afastamento
+                )
+
+                st.success(
+                    "Afastamento atualizado com sucesso."
+                )
+
+                st.rerun()
+
 
             if st.button(
                 "🗑️ Excluir Afastamento",

@@ -88,6 +88,7 @@ def listar_afastamentos():
         """
         SELECT
             ap.id,
+            ap.colaborador_id,
             c.nome,
             ap.data_inicio,
             ap.data_fim,
@@ -111,11 +112,12 @@ def listar_afastamentos():
     return [
         {
             "id": linha[0],
-            "colaborador": linha[1],
-            "data_inicio": linha[2],
-            "data_fim": linha[3],
-            "motivo": linha[4],
-            "observacao": linha[5],
+            "colaborador_id": linha[1],
+            "colaborador": linha[2],
+            "data_inicio": linha[3],
+            "data_fim": linha[4],
+            "motivo": linha[5],
+            "observacao": linha[6],
         }
         for linha in resultados
     ]
@@ -177,6 +179,49 @@ def excluir_afastamento(
     cursor.close()
     conn.close()
 
+
+# ==========================================================
+# Atualizar afastamentos
+# ==========================================================
+
+def atualizar_afastamento(afastamento):
+    """
+    Atualiza um afastamento programado.
+    """
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE afastamentos_programados
+        SET
+            colaborador_id = %s,
+            data_inicio = %s,
+            data_fim = %s,
+            motivo = %s,
+            observacao = %s
+        WHERE id = %s
+        """,
+        (
+            afastamento["colaborador_id"],
+            afastamento["data_inicio"],
+            afastamento["data_fim"],
+            afastamento["motivo"],
+            afastamento["observacao"],
+            afastamento["id"],
+        ),
+    )
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+
+# ==========================================================
+# Listar datas
+# ==========================================================
 
 def listar_datas_periodo(data_inicio, data_fim):
     """
