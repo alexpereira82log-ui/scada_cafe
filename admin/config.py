@@ -2,4 +2,4 @@
 # CONFIGURAÇÕES DA ÁREA ADMINISTRATIVA
 # ==========================================
 
-ADMIN_PASSWORD = "ScadaCafe@2026"
+ADMIN_PASSWORD = "sCada.adm@0001"
