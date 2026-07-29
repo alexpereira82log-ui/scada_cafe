@@ -83,7 +83,8 @@ mes_nome = st.sidebar.selectbox(
 # Converter nome do mês para número
 mes = [k for k, v in meses_dict.items() if v == mes_nome][0]
 
-st.title(f"📊 Dashboard Scada Café - {mes_nome} {ano}")
+#st.title(f"📊 Dashboard Scada Café - {mes_nome} {ano}")
+st.markdown(f"## 📊 Dashboard Scada Café - {mes_nome} {ano}")
 st.markdown("---")
 
 # =========================
