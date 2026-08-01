@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import calendar
 
 from datetime import date
 
@@ -52,10 +53,52 @@ def tela_comissao():
         )
 
 
+    # ==========================================================
+    # Seletor de mês
+    # ==========================================================
+
     hoje = date.today()
 
-    ano = hoje.year
-    mes = hoje.month
+    st.markdown("### 📅 Competência")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        ano = st.selectbox(
+            "Ano",
+            options=[2025, 2026, 2027],
+            index=1,
+        )
+
+    with col2:
+
+        meses = {
+            1: "Janeiro",
+            2: "Fevereiro",
+            3: "Março",
+            4: "Abril",
+            5: "Maio",
+            6: "Junho",
+            7: "Julho",
+            8: "Agosto",
+            9: "Setembro",
+            10: "Outubro",
+            11: "Novembro",
+            12: "Dezembro",
+        }
+
+        mes_nome = st.selectbox(
+            "Mês",
+            options=list(meses.values()),
+            index=hoje.month - 1,
+        )
+
+    mes = next(
+        numero
+        for numero, nome in meses.items()
+        if nome == mes_nome
+    )
 
     # ==========================================================
     # Resumo Mensal
@@ -109,8 +152,15 @@ def tela_comissao():
         expanded=True,
     ):
 
+        data_padrao = date(
+            ano,
+            mes,
+            1,
+        )
+
         data = st.date_input(
-            "📅 Data da operação"
+            "📅 Data da operação",
+            value=data_padrao,
         )
 
         comissao = obter_comissao_dia(data)
@@ -572,40 +622,48 @@ def tela_comissao():
             mes,
         )
 
-        df_relatorio = pd.DataFrame(
-            relatorio
-        )
+        if not relatorio:
 
-        # ==========================================================
-        # Formatação monetária
-        # ==========================================================
+            st.info(
+                "Ainda não existem comissões registradas para a competência selecionada."
+            )
 
-        colunas_valores = df_relatorio.columns[1:]
+        else:
 
-        df_relatorio[colunas_valores] = (
-            df_relatorio[colunas_valores]
-            .round(2)
-        )
+            df_relatorio = pd.DataFrame(
+                relatorio
+            )
 
-        st.dataframe(
-            df_relatorio,
-            use_container_width=True,
-            hide_index=True,
-        )
+            # ==========================================================
+            # Formatação monetária
+            # ==========================================================
 
-        if st.button(
-            "📄 Exportar para Excel",
-            use_container_width=True,
-        ):
+            colunas_valores = df_relatorio.columns[1:]
 
-            caminho = "exports/relatorio_comissao.xlsx"
+            df_relatorio[colunas_valores] = (
+                df_relatorio[colunas_valores]
+                .round(2)
+            )
 
-            exportar_dataframe_excel(
+            st.dataframe(
                 df_relatorio,
-                caminho,
+                use_container_width=True,
+                hide_index=True,
             )
 
-            st.success(
-                f"Relatório exportado com sucesso!\n\nArquivo: {caminho}"
-            )
+            if st.button(
+                "📄 Exportar para Excel",
+                use_container_width=True,
+            ):
+
+                caminho = "exports/relatorio_comissao.xlsx"
+
+                exportar_dataframe_excel(
+                    df_relatorio,
+                    caminho,
+                )
+
+                st.success(
+                    f"Relatório exportado com sucesso!\n\nArquivo: {caminho}"
+                )
 

@@ -659,171 +659,183 @@ with tab3:
         axis=1
     )
 
-    # Criar figura
-    fig = go.Figure()
-
-    # Ticket médio
-    fig.add_trace(
-        go.Scatter(
-            x=df_plot["dia"],
-            y=df_plot["ticket_medio"],
-            mode="lines+markers",
-            name="Ticket Médio",
-            yaxis="y1"
-        )
-    )
-
-    # Cupons
-    fig.add_trace(
-        go.Scatter(
-            x=df_plot["dia"],
-            y=df_plot["cupom"],
-            mode="lines+markers",
-            name="Cupons",
-            yaxis="y2"
-        )
-    )
-
     # =========================
-    # DESTACAR FINS DE SEMANA
+    # VALIDAÇÃO
     # =========================
-    fins_de_semana = df_plot[df_plot["dia_semana"].isin([5, 6])]
 
-    for _, row in fins_de_semana.iterrows():
-        fig.add_vrect(
-            x0=row["dia"] - 0.5,
-            x1=row["dia"] + 0.5,
-            fillcolor="lightgray",
-            opacity=0.3,
-            layer="below",
-            line_width=0
+    if df_plot.empty:
+
+        st.info(
+            "Ainda não existem dados operacionais para esta competência."
         )
 
-    # =========================
-    # LINHA DO DIA ATUAL
-    # =========================
-    hoje_dia = datetime.today().day
+    else:
 
-    fig.add_vline(
-        x=hoje_dia,
-        line_width=2,
-        line_dash="dash",
-        line_color="red"
-    )
+        # Criar figura
+        fig = go.Figure()
 
-    fig.add_annotation(
-        x=hoje_dia,
-        y=max(df_plot["ticket_medio"]),
-        text="Hoje",
-        showarrow=True,
-        arrowhead=1,
-        yshift=10
-    )
-
-    # Layout com dois eixos
-    fig.update_layout(
-        title="Ticket Médio x Cupons por Dia",
-        xaxis=dict(
-            title="Dia do Mês",
-            tickmode="linear",
-            dtick=1
-            ),
-        yaxis=dict(title="Ticket Médio (R$)"),
-        yaxis2=dict(
-            title="Cupons",
-            overlaying="y",
-            side="right"
+        # Ticket médio
+        fig.add_trace(
+            go.Scatter(
+                x=df_plot["dia"],
+                y=df_plot["ticket_medio"],
+                mode="lines+markers",
+                name="Ticket Médio",
+                yaxis="y1"
+            )
         )
-    )
 
-    st.plotly_chart(fig, use_container_width=True)
-
-    # =========================
-    # ANALISE DIA DA SEMANA
-    # =========================
-    st.markdown("### 📊 Resultado por Dia da Semana")
-
-    df_semana = analise_dia_semana(dados, ano)
-
-    st.dataframe(df_semana, use_container_width=True)
-
-
-    # =========================================
-    # 📊 TICKET MÉDIO x CUPONS POR MÊS
-    # =========================================
-    st.markdown("### 📊 Ticket Médio x Cupons por Mês")
-
-    df_mes = dados["base_fat"].copy()
-
-    df_mes = df_mes[
-        (df_mes["ano"] == ano) &
-        (df_mes["mes"] <= mes)
-    ]
-
-    # Filtrar apenas dias de operação
-    df_mes = df_mes[df_mes["cupom"] > 0]
-
-    # Agrupar por mês
-    df_mes = (
-        df_mes
-        .groupby("mes")
-        .agg({
-            "faturamento": "sum",
-            "cupom": "sum",
-            "data": "nunique"
-        })
-        .reset_index()
-    )
-
-    # Métricas
-    df_mes["ticket_medio"] = df_mes["faturamento"] / df_mes["cupom"]
-    df_mes["cupons_dia"] = df_mes["cupom"] / df_mes["data"]
-
-    # Nome dos meses
-    meses_dict = {
-        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
-        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
-        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
-    }
-
-    df_mes["mes_nome"] = df_mes["mes"].map(meses_dict)
-
-    # Gráfico
-    fig = go.Figure()
-
-    # Ticket médio
-    fig.add_trace(
-        go.Scatter(
-            x=df_mes["mes_nome"],
-            y=df_mes["ticket_medio"],
-            mode="lines+markers",
-            name="Ticket Médio",
-            yaxis="y1"
+        # Cupons
+        fig.add_trace(
+            go.Scatter(
+                x=df_plot["dia"],
+                y=df_plot["cupom"],
+                mode="lines+markers",
+                name="Cupons",
+                yaxis="y2"
+            )
         )
-    )
 
-    # Cupons/dia
-    fig.add_trace(
-        go.Scatter(
-            x=df_mes["mes_nome"],
-            y=df_mes["cupons_dia"],
-            mode="lines+markers",
-            name="Cupons/Dia",
-            yaxis="y2"
+        # =========================
+        # DESTACAR FINS DE SEMANA
+        # =========================
+        fins_de_semana = df_plot[df_plot["dia_semana"].isin([5, 6])]
+
+        for _, row in fins_de_semana.iterrows():
+            fig.add_vrect(
+                x0=row["dia"] - 0.5,
+                x1=row["dia"] + 0.5,
+                fillcolor="lightgray",
+                opacity=0.3,
+                layer="below",
+                line_width=0
+            )
+
+        # =========================
+        # LINHA DO DIA ATUAL
+        # =========================
+        hoje_dia = datetime.today().day
+
+        fig.add_vline(
+            x=hoje_dia,
+            line_width=2,
+            line_dash="dash",
+            line_color="red"
         )
-    )
 
-    fig.update_layout(
-        title="Ticket Médio x Cupons por Mês",
-        yaxis=dict(title="Ticket Médio (R$)"),
-        yaxis2=dict(
-            title="Cupons/Dia",
-            overlaying="y",
-            side="right"
+        fig.add_annotation(
+            x=hoje_dia,
+            y=max(df_plot["ticket_medio"]),
+            text="Hoje",
+            showarrow=True,
+            arrowhead=1,
+            yshift=10
         )
-    )
 
-    st.plotly_chart(fig, use_container_width=True)
+        # Layout com dois eixos
+        fig.update_layout(
+            title="Ticket Médio x Cupons por Dia",
+            xaxis=dict(
+                title="Dia do Mês",
+                tickmode="linear",
+                dtick=1
+                ),
+            yaxis=dict(title="Ticket Médio (R$)"),
+            yaxis2=dict(
+                title="Cupons",
+                overlaying="y",
+                side="right"
+            )
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # ANALISE DIA DA SEMANA
+        # =========================
+        st.markdown("### 📊 Resultado por Dia da Semana")
+
+        df_semana = analise_dia_semana(dados, ano)
+
+        st.dataframe(df_semana, use_container_width=True)
+
+
+        # =========================================
+        # 📊 TICKET MÉDIO x CUPONS POR MÊS
+        # =========================================
+        st.markdown("### 📊 Ticket Médio x Cupons por Mês")
+
+        df_mes = dados["base_fat"].copy()
+
+        df_mes = df_mes[
+            (df_mes["ano"] == ano) &
+            (df_mes["mes"] <= mes)
+        ]
+
+        # Filtrar apenas dias de operação
+        df_mes = df_mes[df_mes["cupom"] > 0]
+
+        # Agrupar por mês
+        df_mes = (
+            df_mes
+            .groupby("mes")
+            .agg({
+                "faturamento": "sum",
+                "cupom": "sum",
+                "data": "nunique"
+            })
+            .reset_index()
+        )
+
+        # Métricas
+        df_mes["ticket_medio"] = df_mes["faturamento"] / df_mes["cupom"]
+        df_mes["cupons_dia"] = df_mes["cupom"] / df_mes["data"]
+
+        # Nome dos meses
+        meses_dict = {
+            1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
+            5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
+            9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+        }
+
+        df_mes["mes_nome"] = df_mes["mes"].map(meses_dict)
+
+        # Gráfico
+        fig = go.Figure()
+
+        # Ticket médio
+        fig.add_trace(
+            go.Scatter(
+                x=df_mes["mes_nome"],
+                y=df_mes["ticket_medio"],
+                mode="lines+markers",
+                name="Ticket Médio",
+                yaxis="y1"
+            )
+        )
+
+        # Cupons/dia
+        fig.add_trace(
+            go.Scatter(
+                x=df_mes["mes_nome"],
+                y=df_mes["cupons_dia"],
+                mode="lines+markers",
+                name="Cupons/Dia",
+                yaxis="y2"
+            )
+        )
+
+        fig.update_layout(
+            title="Ticket Médio x Cupons por Mês",
+            yaxis=dict(title="Ticket Médio (R$)"),
+            yaxis2=dict(
+                title="Cupons/Dia",
+                overlaying="y",
+                side="right"
+            )
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
     # =========================================
     # 📈 FATURAMENTO ACUMULADO (ANO)
