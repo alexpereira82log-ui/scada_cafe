@@ -177,4 +177,4 @@ def exportar_dataframe_excel(
         caminho
     )
 
-
+    workbook.close()
