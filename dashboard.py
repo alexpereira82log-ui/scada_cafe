@@ -1074,116 +1074,116 @@ with tab5:
 
         st.warning("Nenhum produto encontrado.")
 
-        st.stop()
-
-    # =========================
-    # AGRUPAMENTO
-    # =========================
-    df_prod = (
-        df_prod
-        .groupby("produto")
-        .agg({
-            "qtd": "sum",
-            "valor_total": "sum"
-        })
-        .reset_index()
-        .sort_values("valor_total", ascending=False)
-    )
-
-    total = df_prod["valor_total"].sum()
-
-    # coluna numérica (para cálculos)
-    df_prod["participacao"] = df_prod["valor_total"] / total
-
-    # coluna formatada (para exibição)
-    df_prod["participacao_fmt"] = (
-        df_prod["participacao"] * 100
-    ).map(lambda x: f"{x:.2f}%".replace(".", ","))
-
-    # =========================
-    # 🏆 TOP PRODUTOS
-    # =========================
-    st.markdown("### 🏆 Top Produtos")
-
-    st.dataframe(
-        df_prod[[
-            "produto",
-            "qtd",
-            "valor_total",
-            "participacao_fmt"
-        ]].head(10),
-        use_container_width=True
-    )
-
-    # =========================
-    # 📊 GRÁFICO
-    # =========================
-    fig = px.bar(
-        df_prod.head(10),
-        x="valor_total",
-        y="produto",
-        orientation="h",
-        text="valor_total"
-    )
-
-    fig.update_layout(yaxis=dict(autorange="reversed"))
-
-    st.plotly_chart(fig, use_container_width=True)
-
-
-    # =========================
-    # 📈 CURVA ABC
-    # =========================
-    st.markdown("### 📈 Curva ABC")
-
-    df_prod["perc_acum"] = df_prod["participacao"].cumsum()
-
-    def classificar(p):
-        if p <= 0.8:
-            return "A"
-        elif p <= 0.95:
-            return "B"
-        else:
-            return "C"
-
-    df_prod["classe"] = df_prod["perc_acum"].apply(classificar)
-
-    st.dataframe(
-        df_prod[["produto", "valor_total", "classe"]],
-        use_container_width=True
-    )
-
-    # =========================
-    # 🧠 INSIGHTS
-    # =========================
-    insights = []
-
-    top1 = df_prod.iloc[0]
-    perc_top1 = top1["participacao"]
-
-    # Regra principal
-    if perc_top1 > 0.25:
-        insights.append("⚠️ Alta dependência de um único produto.")
-    elif perc_top1 > 0.15:
-        insights.append("🔎 Produto líder com boa relevância no faturamento.")
     else:
-        insights.append("✅ Boa distribuição de vendas entre produtos.")
 
-    # Curva ABC
-    qtd_a = len(df_prod[df_prod["classe"] == "A"])
+        # =========================
+        # AGRUPAMENTO
+        # =========================
+        df_prod = (
+            df_prod
+            .groupby("produto")
+            .agg({
+                "qtd": "sum",
+                "valor_total": "sum"
+            })
+            .reset_index()
+            .sort_values("valor_total", ascending=False)
+        )
 
-    if qtd_a < 5:
-        insights.append("⚠️ Poucos produtos concentram a maior parte da receita.")
-    elif qtd_a > 10:
-        insights.append("📊 Mix amplo de produtos com impacto relevante.")
+        total = df_prod["valor_total"].sum()
 
-    # =========================
-    # EXIBIÇÃO
-    # =========================
-    st.markdown("### 🧠 Insights")
+        # coluna numérica (para cálculos)
+        df_prod["participacao"] = df_prod["valor_total"] / total
 
-    for i in insights:
-        st.info(i)
+        # coluna formatada (para exibição)
+        df_prod["participacao_fmt"] = (
+            df_prod["participacao"] * 100
+        ).map(lambda x: f"{x:.2f}%".replace(".", ","))
+
+        # =========================
+        # 🏆 TOP PRODUTOS
+        # =========================
+        st.markdown("### 🏆 Top Produtos")
+
+        st.dataframe(
+            df_prod[[
+                "produto",
+                "qtd",
+                "valor_total",
+                "participacao_fmt"
+            ]].head(10),
+            use_container_width=True
+        )
+
+        # =========================
+        # 📊 GRÁFICO
+        # =========================
+        fig = px.bar(
+            df_prod.head(10),
+            x="valor_total",
+            y="produto",
+            orientation="h",
+            text="valor_total"
+        )
+
+        fig.update_layout(yaxis=dict(autorange="reversed"))
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+        # =========================
+        # 📈 CURVA ABC
+        # =========================
+        st.markdown("### 📈 Curva ABC")
+
+        df_prod["perc_acum"] = df_prod["participacao"].cumsum()
+
+        def classificar(p):
+            if p <= 0.8:
+                return "A"
+            elif p <= 0.95:
+                return "B"
+            else:
+                return "C"
+
+        df_prod["classe"] = df_prod["perc_acum"].apply(classificar)
+
+        st.dataframe(
+            df_prod[["produto", "valor_total", "classe"]],
+            use_container_width=True
+        )
+
+        # =========================
+        # 🧠 INSIGHTS
+        # =========================
+        insights = []
+
+        top1 = df_prod.iloc[0]
+        perc_top1 = top1["participacao"]
+
+        # Regra principal
+        if perc_top1 > 0.25:
+            insights.append("⚠️ Alta dependência de um único produto.")
+        elif perc_top1 > 0.15:
+            insights.append("🔎 Produto líder com boa relevância no faturamento.")
+        else:
+            insights.append("✅ Boa distribuição de vendas entre produtos.")
+
+        # Curva ABC
+        qtd_a = len(df_prod[df_prod["classe"] == "A"])
+
+        if qtd_a < 5:
+            insights.append("⚠️ Poucos produtos concentram a maior parte da receita.")
+        elif qtd_a > 10:
+            insights.append("📊 Mix amplo de produtos com impacto relevante.")
+
+        # =========================
+        # EXIBIÇÃO
+        # =========================
+        st.markdown("### 🧠 Insights")
+
+        for i in insights:
+            st.info(i)
 
 
 # ======================================================
