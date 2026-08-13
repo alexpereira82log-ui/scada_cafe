@@ -71,24 +71,20 @@ def calcular_metricas(dados: dict, ano: int, mes: int) -> dict:
     hoje = datetime.today()
 
     if ano == hoje.year and mes == hoje.month:
+
         ultimo_dia = calendar.monthrange(ano, mes)[1]
-        dias_restantes = ultimo_dia - hoje.day
+
+        dias_com_faturamento = len(df_dias_validos)
+
+        dias_restantes = (
+            ultimo_dia - dias_com_faturamento
+        )
+
     else:
         dias_restantes = 0
 
     dias_restantes = max(dias_restantes, 0)
 
-    # Média diária (já corrigida anteriormente)
-    df_dias_validos = (
-        df_mes
-        .groupby(df_mes["data"].dt.day)["faturamento"]
-        .sum()
-        .reset_index()
-    )
-
-    df_dias_validos = df_dias_validos[df_dias_validos["faturamento"] > 0]
-
-    media_fat_dia = df_dias_validos["faturamento"].mean()
 
     # Segurança
     media_fat_dia = media_fat_dia if pd.notna(media_fat_dia) else 0

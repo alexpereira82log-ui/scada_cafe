@@ -149,7 +149,7 @@ def tela_comissao():
 
     with st.expander(
         "📅 Comissão Diária",
-        expanded=True,
+        expanded=False,
     ):
 
         data_padrao = date(
@@ -363,7 +363,7 @@ def tela_comissao():
 
     with st.expander(
         "📋 Afastamentos Cadastrados",
-        expanded=True,
+        expanded=False,
     ):
 
         afastamentos = listar_afastamentos()

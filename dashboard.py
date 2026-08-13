@@ -291,7 +291,8 @@ with tab2:
         .groupby("data")
         .agg({
             "faturamento": "sum",
-            "cupom": "sum"
+            "cupom": "sum",
+            "meta": "max"
         })
         .reset_index()
     )
@@ -410,13 +411,45 @@ with tab2:
     # =========================================
     st.markdown("### 📋 Dados de Faturamento")
 
-    # 🔥 ORDENAR PRIMEIRO
-    df_dia = df_dia.sort_values("data", ascending=False)
+    # =========================================
+    # TABELA DE APRESENTAÇÃO
+    # =========================================
 
-    # 🔥 DEPOIS FORMATAR
-    df_dia["data"] = df_dia["data"].dt.strftime("%Y-%m-%d")
+    df_tabela = df_dia.copy()
 
-    st.dataframe(df_dia, use_container_width=True)
+    # Ordenar
+    df_tabela = df_tabela.sort_values(
+        "data",
+        ascending=False
+    )
+
+    # Formatar data
+    df_tabela["data"] = df_tabela["data"].dt.strftime("%Y-%m-%d")
+
+    # Remover apenas da exibição
+    df_tabela = df_tabela.drop(
+        columns=["dia"]
+    )
+
+    # Arredondar meta e ticket médio
+    df_tabela["meta"] = df_tabela["meta"].round(0)
+    df_tabela["ticket_medio"] = df_tabela["ticket_medio"].round(0)
+
+    # Organizar colunas
+    df_tabela = df_tabela[
+        [
+            "data",
+            "faturamento",
+            "cupom",
+            "meta",
+            "ticket_medio"
+        ]
+    ]
+
+    st.dataframe(
+        df_tabela,
+        use_container_width=True
+    )
 
     # =========================================
     # DOWNLOAD
