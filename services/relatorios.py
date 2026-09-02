@@ -124,6 +124,133 @@ def extrair_cancelamentos(texto, tipo):
 
 
 # ====================================
+# 📊 AGRUPAR CANCELAMENTOS:
+# ====================================
+def agrupar_cancelamentos(lista):
+
+    grupos = {
+        "80": [],
+        "99": [],
+        "23": [],
+        "89": [],
+        "outros": []
+    }
+
+    for linha in lista:
+
+        partes = linha.split()
+
+        if not partes:
+            continue
+
+        mesa = partes[0]
+
+        if mesa in grupos:
+            grupos[mesa].append(linha)
+
+        else:
+            grupos["outros"].append(linha)
+
+    return grupos
+
+
+# ====================================
+# 📊 JUSTIFICATIVA DOS CANCELAMENTOS:
+# ====================================
+def obter_justificativa(grupo):
+
+    justificativas = {
+        "80": "Café do dia equipe.",
+        "99": "Regulagem espresso.",
+        "23": "Brunna.",
+        "89": "Alex.",
+        "outros": "Lançamento errado (sem perda)."
+    }
+
+    return justificativas.get(
+        grupo,
+        "Lançamento errado (sem perda)."
+    )
+
+
+# ====================================
+# 📊 MONTAR GRUPO DE CANCELAMENTOS:
+# ====================================
+def montar_grupo_cancelamentos(grupo, registros):
+
+    if not registros:
+        return ""
+
+    linhas = []
+
+    # Cabeçalho da tabela
+    linhas.append(
+        f"{'Mesa':<8}"
+        f"{'Cod.':<5}"
+        f"{'Produto':<20}"
+        f"{'Qtde':<7}"
+        f"{'Subt':<9}"
+        f"{'Aut. por':<12}"
+        f"{'Hora'}"
+    )
+
+    for linha in registros:
+
+        registro = formatar_linha_cancelamento(linha)
+
+        if registro is None:
+            continue
+
+        linha_formatada = (
+            f"{registro['mesa']:<8}"
+            f"{registro['codigo']:<6}"
+            f"{registro['produto']:<20}"
+            f"{registro['quantidade']:<7}"
+            f"{registro['subtotal']:<9}"
+            f"{registro['autorizador']:<12}"
+            f"{registro['hora']}"
+        )
+
+        linhas.append(linha_formatada)
+
+    linhas.append(
+        f"Justificativa: {obter_justificativa(grupo)}"
+    )
+
+    return "\n".join(linhas)
+
+
+# ====================================
+# 📊 FORMATAR LINHA DE CANCELAMENTO:
+# ====================================
+def formatar_linha_cancelamento(linha):
+
+    partes = linha.split()
+
+    if len(partes) < 7:
+        return None
+
+    mesa = partes[0]
+    hora = partes[-1]
+    autorizador = partes[-2]
+    subtotal = partes[-3]
+    quantidade = partes[-4]
+
+    codigo = partes[1]
+    produto = " ".join(partes[2:-4])
+
+    return {
+        "mesa": mesa,
+        "codigo": codigo,
+        "produto": produto,
+        "quantidade": quantidade,
+        "subtotal": subtotal,
+        "autorizador": autorizador,
+        "hora": hora
+    }
+
+
+# ====================================
 # 📊 FORMATAR COMO TABELA:
 # ====================================
 def formatar_tabela_cancelamentos(lista):
@@ -294,4 +421,188 @@ def extrair_vendas_por_hora(texto):
     df = df[(df["hora"] >= 11) & (df["hora"] <= 23)]
 
     return df
+
+
+# ====================================
+# 📊 MONTAR RELATÓRIO GERENCIAL DIÁRIO
+# ====================================
+def montar_relatorio_gerencial(
+    texto,
+    faturamento_mes,
+    perc_meta,
+    projecao
+):
+
+    indicadores = extrair_indicadores(texto)
+
+    # Data do relatório
+    match_data = re.search(
+        r"Data Abertura\.*:\s*(\d{2}/\d{2}/\d{4})",
+        texto
+    )
+
+    data_relatorio = (
+        match_data.group(1)
+        if match_data
+        else "Data não identificada"
+    )
+
+    linhas = []
+
+    # ====================================
+    # RESUMO DO DIA
+    # ====================================
+
+    linhas.append(
+        f"Data: {data_relatorio}"
+    )
+
+    linhas.append(
+        f"Faturamento bruto: {indicadores['faturamento_bruto']:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
+
+    linhas.append(
+        f"Tx. Serv Mesa: {indicadores['tx_servico']:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
+
+    linhas.append(
+        f"TC-Total Cupom: {indicadores['cupons']}"
+    )
+
+    linhas.append(
+        f"TM-Ticket Médio por Cupom: {indicadores['ticket_medio']:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
+
+    linhas.append("")
+
+    # ====================================
+    # RESUMO DA COMPETÊNCIA
+    # ====================================
+
+    linhas.append(
+        f"Faturamento mês: {faturamento_mes:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
+
+    linhas.append(
+        f"% Meta: {perc_meta:.2f}%"
+        if perc_meta is not None
+        else "% Meta: -"
+    )
+
+    linhas.append(
+        f"Projeção: {projecao:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+        if projecao is not None
+        else "Projeção: -"
+    )
+
+    linhas.append("")
+
+    # ====================================
+    # CANCELAMENTOS ANTES
+    # ====================================
+
+    linhas.append(
+        "-------------------------"
+    )
+
+    linhas.append(
+        "CANCELAMENTO VENDA MESA (ANTES ENVIAR PRODUCAO)"
+    )
+
+    linhas.append(
+        "-------------------------"
+    )
+
+    cancelamentos_antes = extrair_cancelamentos(
+        texto,
+        "antes"
+    )
+
+    grupos_antes = agrupar_cancelamentos(
+        cancelamentos_antes
+    )
+
+    encontrou_antes = False
+
+    for grupo in ["80", "99", "23", "89", "outros"]:
+
+        bloco = montar_grupo_cancelamentos(
+            grupo,
+            grupos_antes[grupo]
+        )
+
+        if bloco:
+
+            linhas.append(bloco)
+            linhas.append("")
+            encontrou_antes = True
+
+    if not encontrou_antes:
+        linhas.append(
+            "Nenhum cancelamento registrado."
+        )
+
+    # ====================================
+    # CANCELAMENTOS DEPOIS
+    # ====================================
+
+    linhas.append(
+        "-------------------------"
+    )
+
+    linhas.append(
+        "CANCELAMENTO VENDA MESA (DEPOIS ENVIAR PRODUCAO)"
+    )
+
+    linhas.append(
+        "-------------------------"
+    )
+
+    cancelamentos_depois = extrair_cancelamentos(
+        texto,
+        "depois"
+    )
+
+    grupos_depois = agrupar_cancelamentos(
+        cancelamentos_depois
+    )
+
+    encontrou_depois = False
+
+    for grupo in ["80", "99", "23", "89", "outros"]:
+
+        bloco = montar_grupo_cancelamentos(
+            grupo,
+            grupos_depois[grupo]
+        )
+
+        if bloco:
+
+            linhas.append(bloco)
+            linhas.append("")
+            encontrou_depois = True
+
+    if not encontrou_depois:
+        linhas.append(
+            "Nenhum cancelamento registrado."
+        )
+
+    return "\n".join(linhas)
+
+
 

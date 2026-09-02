@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -1274,6 +1275,80 @@ with tab6:
         # =========================
         with st.expander("📄 Ver relatório completo"):
             st.text(texto)
+
+        # =========================
+        # 📋 RELATÓRIO GERENCIAL
+        # =========================
+
+        relatorio_gerencial = rel.montar_relatorio_gerencial(
+            texto,
+            metricas["total_fat"],
+            metricas["perc_meta"],
+            metricas["proj_fat"]
+        )
+
+        st.subheader("📋 Relatório Gerencial")
+
+        components.html(
+            f"""
+            <script>
+                async function copiarRelatorio() {{
+
+                    const texto = {relatorio_gerencial!r};
+
+                    try {{
+
+                        await navigator.clipboard.writeText(texto);
+
+                        const botao = document.getElementById("botao-copiar");
+
+                        botao.innerText = "✅ Relatório copiado!";
+
+                        setTimeout(() => {{
+                            botao.innerText = "📋 Copiar relatório";
+                        }}, 2000);
+
+                    }} catch (erro) {{
+
+                        const area = document.createElement("textarea");
+
+                        area.value = texto;
+                        document.body.appendChild(area);
+                        area.select();
+
+                        document.execCommand("copy");
+
+                        document.body.removeChild(area);
+
+                        const botao = document.getElementById("botao-copiar");
+
+                        botao.innerText = "✅ Relatório copiado!";
+
+                        setTimeout(() => {{
+                            botao.innerText = "📋 Copiar relatório";
+                        }}, 2000);
+                    }}
+                }}
+            </script>
+
+            <button
+                id="botao-copiar"
+                onclick="copiarRelatorio()"
+                style="
+                    padding: 8px 16px;
+                    font-size: 14px;
+                    cursor: pointer;
+                    border-radius: 6px;
+                    border: 1px solid #555;
+                "
+            >
+                📋 Copiar relatório
+            </button>
+            """,
+            height=50
+        )
+
+        st.text(relatorio_gerencial)
             
 
 # ======================================================
