@@ -25,3 +25,6 @@ faturamento_scada.db
 # ==========================================
 senha_email.py
 credentials.json
+
+# Arquivos de metadados do macOS
+.DS_Store
