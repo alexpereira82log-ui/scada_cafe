@@ -415,7 +415,10 @@ def extrair_vendas_por_hora(texto):
             except:
                 continue
 
-    df = pd.DataFrame(dados)
+    df = pd.DataFrame(
+        dados,
+        columns=["hora", "faturamento", "cupons", "ticket"]
+    )
 
     # 🔥 filtrar horário da operação
     df = df[(df["hora"] >= 11) & (df["hora"] <= 23)]
