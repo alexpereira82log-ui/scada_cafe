@@ -28,3 +28,6 @@ credentials.json
 
 # Arquivos de metadados do macOS
 .DS_Store
+
+# Secrets do Streamlit
+.streamlit/secrets.toml

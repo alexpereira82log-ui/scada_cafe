@@ -8,13 +8,16 @@ from services.relatorios import (
     carregar_relatorio_por_data,
     extrair_indicadores,
     extrair_produtos_relatorio,
+    extrair_vendas_por_hora
 )
 
 from database.connection import get_connection
+
 from services.persistencia import (
     salvar_base_fat,
     salvar_comissao_dia,
-    salvar_produtos
+    salvar_produtos,
+    salvar_vendas_hora
 )
 
 from services.comissao_service import (
@@ -90,6 +93,8 @@ def importar_relatorio(data_relatorio: str, folder_id: str):
 
     df_produtos = extrair_produtos_relatorio(texto)
 
+    df_vendas_hora = extrair_vendas_por_hora(texto)
+
     # ==========================================
     # PREPARAÇÃO DOS OBJETOS DE DOMÍNIO
     # ==========================================
@@ -112,6 +117,8 @@ def importar_relatorio(data_relatorio: str, folder_id: str):
         "comissao_dia": comissao_dia,
 
         "produtos": produtos,
+
+        "vendas_hora": df_vendas_hora,
 
     }
 
@@ -192,6 +199,12 @@ def executar_importacao(data_relatorio: str, folder_id: str):
             df_produtos=dados_importados["produtos"],
         )
 
+        linhas_vendas_hora = salvar_vendas_hora(
+            conn=conn,
+            data=dados_importados["data"],
+            df_vendas_hora=dados_importados["vendas_hora"],
+        )
+
         # Confirma todas as alterações
         conn.commit()
 
@@ -199,6 +212,7 @@ def executar_importacao(data_relatorio: str, folder_id: str):
             "base_fat": linhas_base_fat,
             "comissao_dia": linhas_comissao,
             "produtos": linhas_produtos,
+            "vendas_hora": linhas_vendas_hora,
         }
 
     except Exception:
