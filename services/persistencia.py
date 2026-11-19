@@ -142,3 +142,58 @@ def salvar_produtos(
     cursor.close()
 
     return linhas_afetadas
+
+
+
+# ==========================================
+# ATUALIZAR VENDAS POR HORA
+# ==========================================
+
+def salvar_vendas_hora(
+    conn,
+    data: str,
+    df_vendas_hora
+):
+    """
+    Salva ou atualiza as vendas por hora do relatório.
+    """
+
+    if df_vendas_hora.empty:
+        return 0
+
+    cursor = conn.cursor()
+
+    linhas_afetadas = 0
+
+    for _, row in df_vendas_hora.iterrows():
+
+        cursor.execute(
+            """
+            INSERT INTO vendas_hora (
+                data,
+                hora,
+                faturamento,
+                cupons,
+                ticket
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (data, hora)
+            DO UPDATE SET
+                faturamento = EXCLUDED.faturamento,
+                cupons = EXCLUDED.cupons,
+                ticket = EXCLUDED.ticket
+            """,
+            (
+                data,
+                int(row["hora"]),
+                float(row["faturamento"]),
+                int(row["cupons"]),
+                float(row["ticket"]),
+            ),
+        )
+
+        linhas_afetadas += 1
+
+    cursor.close()
+
+    return linhas_afetadas
